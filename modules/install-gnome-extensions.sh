@@ -23,7 +23,7 @@ install_dependencies() {
 install_extensions() {
   echo "🧩 Installing GNOME extensions using gext..."
   for ext in "${EXTENSIONS[@]}"; do
-    gext install "$ext"
+    gext install "$ext" --yes
   done
 }
 
