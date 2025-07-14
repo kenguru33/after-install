@@ -26,7 +26,7 @@ case "$ACTION" in
     "$MODULES/install-kitty.sh" all
     "$MODULES/install-vscode.sh" all
     "$MODULES/install-chrome.sh" all
-    "$MODULES/install-blackbox.sh" all
+    "$MODULES/install-blackbox-terminal.sh" all
 
     ;;
   install)
@@ -36,7 +36,7 @@ case "$ACTION" in
     "$MODULES/install-vscode.sh" install
     "$MODULES/../install-terminal.sh" install
     "$MODULES/install-chrome.sh" install
-    "$MODULES/install-blackbox.sh" install
+    "$MODULES/install-blackbox-terminal.sh" install
     ;;
   config)
     "$MODULES/install-gnome-extensions.sh" config
@@ -45,7 +45,7 @@ case "$ACTION" in
     "$MODULES/install-vscode.sh" config
     "$MODULES/../install-terminal.sh" config
     "$MODULES/install-chrome.sh" config
-    "$MODULES/install-blackbox.sh" config
+    "$MODULES/install-blackbox-terminal.sh" config
     ;;
   clean)
     "$MODULES/install-orchis-theme.sh" clean
@@ -54,7 +54,7 @@ case "$ACTION" in
     "$MODULES/install-vscode.sh" clean
     "$MODULES/../install-terminal.sh" clean
     "$MODULES/install-chrome.sh" clean
-    "$MODULES/install-blackbox.sh" clean
+    "$MODULES/install-blackbox-terminal.sh" clean
     ;;
   *)
     echo "Usage: $0 [all|install|config|clean]"
