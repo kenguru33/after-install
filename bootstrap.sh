@@ -1,29 +1,41 @@
 #!/bin/bash
 set -e
 
+# === Ensure proper download environment ===
+if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
+  echo "❌ Neither curl nor wget is available for downloading."
+  exit 1
+fi
+
+if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
+  tmp="/tmp/bootstrap.sh"
+  echo "⚙️ Re-downloading script to $tmp for proper execution..."
+  if command -v curl &>/dev/null; then
+    curl -fsSL "https://.../bootstrap.sh" -o "$tmp"
+  else
+    wget -qO "$tmp" "https://.../bootstrap.sh"
+  fi
+  exec bash "$tmp" "$@"
+fi
+
 REPO_DIR="$HOME/.after-install"
 
-# === Check that script is not run as root ===
+# === Prevent running as root ===
 if [ "$(id -u)" -eq 0 ]; then
-  echo "❌ Do not run this script as root."
-  echo "💡 Run it as a regular user who has sudo access."
+  echo "❌ Do not run as root. Use a normal user."
   exit 1
 fi
 
-# === Check if user has sudo privileges ===
-if ! sudo -n true 2>/dev/null; then
-  echo "❌ You must have sudo privileges to run this script."
-  echo ""
-  echo "💡 To add yourself to the sudo group (requires root):"
-  echo "   su -c 'usermod -aG sudo $USER'"
-  echo ""
-  echo "🔁 Then log out and back in for the change to take effect."
+# === Validate sudo with prompt ===
+if ! sudo -v; then
+  echo "❌ Unable to authenticate with sudo."
+  echo "💡 Run this script in a terminal where you can enter your password."
   exit 1
 fi
 
-# === Function to ensure a package is installed ===
+# === ensure_installed, repo clone/pull, etc. ===
 ensure_installed() {
-  local pkg="$1"
+  pkg="$1"
   if ! command -v "$pkg" &>/dev/null; then
     echo "🔧 Installing $pkg..."
     sudo apt update
@@ -33,16 +45,14 @@ ensure_installed() {
   fi
 }
 
-# === Ensure required tools ===
 ensure_installed curl
 ensure_installed git
 
-# === Clone or update the repo ===
 if [ -d "$REPO_DIR" ]; then
   echo "📦 Updating existing repo..."
   git -C "$REPO_DIR" pull
 else
-  echo "📥 Cloning after-install repo..."
+  echo "📥 Cloning after-install..."
   git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
 fi
 
