@@ -6,32 +6,36 @@ set -e
 install_dependencies() {
   echo "🔧 Installing required dependencies..."
   sudo apt update
-  sudo apt install -y curl gpg
-}
+  sudo apt install -y curl gpg apt-transport-https
 
-download_vscode() {
-  echo "⬇️ Downloading latest VS Code .deb package..."
-  curl -L -o /tmp/code.deb "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+  echo "🔐 Adding Microsoft GPG key..."
+  curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /usr/share/keyrings/vscode.gpg > /dev/null
+
+  echo "📦 Adding VS Code apt repository..."
+  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/vscode.gpg] https://packages.microsoft.com/repos/vscode stable main" | \
+    sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+
+  sudo apt update
 }
 
 install_vscode() {
   echo "📦 Installing VS Code..."
-  sudo apt install -y /tmp/code.deb
+  sudo DEBIAN_FRONTEND=noninteractive apt install -y code
 }
 
 cleanup() {
   echo "🧹 Cleaning up..."
-  rm -f /tmp/code.deb
+  sudo rm -f /etc/apt/sources.list.d/vscode.list
+  sudo rm -f /usr/share/keyrings/vscode.gpg
 }
 
 show_help() {
-  echo "Usage: $0 [all|deps|download|install|clean]"
+  echo "Usage: $0 [all|deps|install|clean]"
   echo ""
   echo "  all       Run full installation process"
-  echo "  deps      Install required dependencies"
-  echo "  download  Download the VS Code .deb package"
-  echo "  install   Install the downloaded package"
-  echo "  clean     Remove temporary files"
+  echo "  deps      Install dependencies and add repo"
+  echo "  install   Install VS Code from repo"
+  echo "  clean     Remove repo and key (optional cleanup)"
 }
 
 # === Entry Point ===
@@ -39,15 +43,10 @@ show_help() {
 case "$1" in
   all)
     install_dependencies
-    download_vscode
     install_vscode
-    cleanup
     ;;
   deps)
     install_dependencies
-    ;;
-  download)
-    download_vscode
     ;;
   install)
     install_vscode
@@ -59,4 +58,3 @@ case "$1" in
     show_help
     ;;
 esac
-
