@@ -19,7 +19,7 @@ BACKGROUND_DEST_PATH="$BACKGROUND_DEST_DIR/${THEME_DIR}-${THEME_BACKGROUND}"
 install_theme_packages() {
   echo "📦 Installing required theme packages..."
   sudo apt update
-  sudo apt install -y gnome-tweaks gnome-shell-extensions dconf-cli git
+  sudo apt install -y gnome-tweaks gnome-shell-extensions dconf-cli git gtk2-engines-murrine sassc
   echo "✅ Packages installed."
 }
 
