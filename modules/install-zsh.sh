@@ -34,6 +34,22 @@ install_starship() {
 configure_zsh() {
   echo "🧠 Installing Oh My Zsh..."
 
+  TIMESTAMP=$(date +%Y%m%d%H%M%S)
+
+  # Backup existing Oh My Zsh directory if it exists
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    BACKUP_DIR="$HOME/.oh-my-zsh.bak.$TIMESTAMP"
+    mv "$HOME/.oh-my-zsh" "$BACKUP_DIR"
+    echo "📦 Existing Oh My Zsh directory found. Backed up to: $BACKUP_DIR"
+  fi
+
+  # Backup existing .zshrc if it exists
+  if [ -f "$HOME/.zshrc" ]; then
+    ZSHRC_BACKUP="$HOME/.zshrc.bak.$TIMESTAMP"
+    mv "$HOME/.zshrc" "$ZSHRC_BACKUP"
+    echo "📜 Existing .zshrc file found. Backed up to: $ZSHRC_BACKUP"
+  fi
+
   export RUNZSH=no
   export CHSH=no
   export KEEP_ZSHRC=yes
