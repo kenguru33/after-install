@@ -35,6 +35,7 @@ case "$ACTION" in
     "$MODULES/install-vscode.sh" install
     "$MODULES/../install-terminal.sh" install
     "$MODULES/install-chrome.sh" install
+    "$MODULES/install-blackbox.sh" install
     ;;
   config)
     "$MODULES/install-gnome-extensions.sh" config
@@ -43,6 +44,7 @@ case "$ACTION" in
     "$MODULES/install-vscode.sh" config
     "$MODULES/../install-terminal.sh" config
     "$MODULES/install-chrome.sh" config
+    "$MODULES/install-blackbox.sh" config
     ;;
   clean)
     "$MODULES/install-orchis-theme.sh" clean
@@ -51,6 +53,7 @@ case "$ACTION" in
     "$MODULES/install-vscode.sh" clean
     "$MODULES/../install-terminal.sh" clean
     "$MODULES/install-chrome.sh" clean
+    "$MODULES/install-blackbox.sh" clean
     ;;
   *)
     echo "Usage: $0 [all|install|config|clean]"

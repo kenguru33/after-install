@@ -20,16 +20,19 @@ ACTION="${1:-all}"
 
 case "$ACTION" in
   all)
+    "$MODULES/install-extra-packages.sh" all
     "$MODULES/install-git.sh" all
     "$MODULES/install-zsh.sh" all
     "$MODULES/install-nerdfonts.sh" all
     ;;
   install)
+    "$MODULES/install-extra-packages.sh" install
     "$MODULES/install-git.sh" install
     "$MODULES/install-zsh.sh" install
     "$MODULES/install-nerdfonts.sh" install
     ;;
   config)
+    "$MODULES/install-extra-packages.sh" config
     "$MODULES/install-git.sh" config
     "$MODULES/install-zsh.sh" config
     "$MODULES/install-nerdfonts.sh" config
@@ -38,6 +41,7 @@ case "$ACTION" in
     "$MODULES/install-git.sh" clean
     "$MODULES/install-nerdfonts.sh" clean
     "$MODULES/install-zsh.sh" clean
+    "$MODULES/install-extra-packages.sh" clean
     ;;
   *)
     echo "Usage: $0 [all|install|config|clean]"

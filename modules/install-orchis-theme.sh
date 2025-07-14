@@ -7,6 +7,7 @@ THEME_DIR="${THEME_DIR:-orchis}"
 THEME_COLOR="dark"
 THEME_SHELL_COLOR="Dark"
 THEME_BACKGROUND="background.jpg"
+THEME_TWEAKS="macos"
 
 THEME_PATH="$SCRIPT_DIR/$THEME_DIR"
 BACKGROUND_ORG_PATH="$THEME_PATH/$THEME_BACKGROUND"
@@ -29,7 +30,7 @@ install_theme_assets() {
   if [ ! -d /tmp/Orchis-theme ]; then
     git clone https://github.com/vinceliuice/Orchis-theme.git /tmp/Orchis-theme
   fi
-  /tmp/Orchis-theme/install.sh --tweaks macos -l -c "$THEME_COLOR" -s standard
+  /tmp/Orchis-theme/install.sh --tweaks "$THEME_TWEAKS" -l -c "$THEME_COLOR" -s standard
 
   if [ ! -d /tmp/Tela-icon-theme ]; then
     git clone https://github.com/vinceliuice/Tela-icon-theme.git /tmp/Tela-icon-theme
