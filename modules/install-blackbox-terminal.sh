@@ -3,13 +3,14 @@ set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 MODULE_NAME="blackbox-terminal"
+SCHEMA_ID="com.raggesilver.BlackBox"
 SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
 PALETTE_NAME="catppuccin-mocha"
-SCHEMA_ID="com.raggesilver.BlackBox"
 ACTION="${1:-all}"
 
 install_blackbox() {
   echo "📦 Installing BlackBox Terminal from apt..."
+
   if ! command -v blackbox &>/dev/null; then
     sudo apt update
     sudo apt install -y blackbox-terminal
@@ -22,6 +23,7 @@ install_blackbox() {
 install_catppuccin_theme() {
   echo "🎨 Installing Catppuccin Mocha theme..."
   mkdir -p "$SCHEME_DIR"
+
   if [[ ! -f "$SCHEME_DIR/$PALETTE_NAME.json" ]]; then
     TMP_DIR=$(mktemp -d)
     git clone --depth=1 https://github.com/catppuccin/tilix.git "$TMP_DIR"
@@ -38,9 +40,16 @@ config_blackbox() {
 
   if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
     gsettings set "$SCHEMA_ID" font 'Hack Nerd Font Mono 11'
-    gsettings set "$SCHEMA_ID" terminal-padding "[12, 12, 12, 12]"   # left, right, top, bottom
-    gsettings set "$SCHEMA_ID" style-preference 2                    # 0=auto, 1=light, 2=dark
+    gsettings set "$SCHEMA_ID" terminal-padding '(12, 12, 12, 12)'
     gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
+
+    if gsettings range "$SCHEMA_ID" style-preference | grep -q '2'; then
+      gsettings set "$SCHEMA_ID" style-preference 2
+    else
+      echo "⚠️ Style preference 'dark' not supported. Falling back to 'auto'."
+      gsettings set "$SCHEMA_ID" style-preference 0
+    fi
+
     echo "✅ Configuration applied via GSettings."
   else
     echo "⚠️ GSettings schema '$SCHEMA_ID' not found. Launch BlackBox once and try again."
