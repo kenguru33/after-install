@@ -21,47 +21,24 @@ load_user_config() {
   fi
 }
 
-# === Git Setup with Gum Progress ===
-run_with_progress() {
-  STEPS=6
-  CURRENT=0
-
-  PROGRESS_PIPE=$(mktemp -u)
-  mkfifo "$PROGRESS_PIPE"
-
-  gum progress --title "🔧 Installing and Configuring Git" \
-               --spinner line --width 40 --value 0 < "$PROGRESS_PIPE" &
-  PROGRESS_PID=$!
-
-  {
-    step() {
-      CURRENT=$((CURRENT + 1))
-      echo $((CURRENT * 100 / STEPS)) > "$PROGRESS_PIPE"
-    }
-
-    step; sudo apt update -y &>/dev/null
-    step; sudo apt install -y git &>/dev/null
-    step; git config --global user.name "$name" &>/dev/null
-    step; git config --global user.email "$email" &>/dev/null
-    step; git config --global init.defaultBranch main &>/dev/null
-    step; git config --global credential.helper store &>/dev/null
-
-    sleep 0.2
-    rm "$PROGRESS_PIPE"
-    wait "$PROGRESS_PID"
-  } || {
-    rm -f "$PROGRESS_PIPE"
-    echo "❌ Git installation/config failed."
-    exit 1
-  }
+# === Git Installation ===
+install_git_package() {
+  echo "📦 Installing Git..."
+  sudo apt update -y &>/dev/null
+  sudo apt install -y git &>/dev/null
+  echo "✅ Git installed"
 }
 
-# === Additional Git Config (Editor + Aliases) ===
-extra_config() {
-  editor=$(gum input --prompt "🖊️ Preferred editor (e.g. nano, vim, code): " --placeholder "nano")
-  [[ -z "$editor" ]] && editor="nano"
+# === Git Configuration ===
+configure_git() {
+  echo "🛠️  Configuring Git..."
 
-  git config --global core.editor "$editor"
+  git config --global user.name "$name"
+  git config --global user.email "$email"
+  git config --global init.defaultBranch main
+  git config --global credential.helper store
+
+  git config --global core.editor "nano"
   git config --global pull.rebase false
   git config --global color.ui auto
   git config --global core.autocrlf input
@@ -71,25 +48,13 @@ extra_config() {
   git config --global alias.br branch
   git config --global alias.cm "commit -m"
   git config --global alias.hist "log --oneline --graph --decorate"
-}
 
-# === Entrypoints ===
-
-install_git() {
-  load_user_config
-  run_with_progress
-  extra_config
   echo "✅ Git configured for $name <$email>"
 }
 
-configure_git() {
-  load_user_config
-  extra_config
-  echo "✅ Git reconfigured for $name <$email>"
-}
-
+# === Clean Git Config ===
 clean_git() {
-  echo "🗑️  Removing Git global config..."
+  echo "🧹 Removing Git global config..."
   git config --global --unset-all user.name 2>/dev/null || true
   git config --global --unset-all user.email 2>/dev/null || true
   git config --global --remove-section alias 2>/dev/null || true
@@ -97,25 +62,28 @@ clean_git() {
   echo "✅ Git config cleaned"
 }
 
+# === Help ===
 show_help() {
   echo "Usage: $0 [all|install|config|clean]"
   echo ""
   echo "  all      Install and configure Git"
-  echo "  install  Only install Git (with progress bar)"
-  echo "  config   Only configure editor and aliases"
+  echo "  install  Only install Git"
+  echo "  config   Only configure Git"
   echo "  clean    Remove Git global config"
 }
 
 # === Dispatch ===
-
 case "$ACTION" in
   all)
-    install_git
+    load_user_config
+    install_git_package
+    configure_git
     ;;
   install)
-    install_git
+    install_git_package
     ;;
   config)
+    load_user_config
     configure_git
     ;;
   clean)
