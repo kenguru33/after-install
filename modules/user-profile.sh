@@ -23,13 +23,15 @@ EOF
       source "$CONFIG_FILE"
     fi
 
-    # Prompt full name
+    # === Prompt for full name ===
     while true; do
       USER_NAME=$(gum input \
         --prompt "📝 Full name: " \
         --placeholder "Bernt Anker" \
         --value "${name:-}" \
         --width 50)
+
+      USER_NAME=$(echo "$USER_NAME" | tr -d '\r\n')
 
       if [[ -z "$USER_NAME" ]]; then
         gum style --foreground 1 "❌ Name cannot be empty."
@@ -38,13 +40,15 @@ EOF
       fi
     done
 
-    # Prompt email
+    # === Prompt and validate email ===
     while true; do
       USER_EMAIL=$(gum input \
         --prompt "📧 Email address: " \
         --placeholder "bernt@example.com" \
         --value "${email:-}" \
         --width 50)
+
+      USER_EMAIL=$(echo "$USER_EMAIL" | tr -d '\r\n')
 
       if [[ -z "$USER_EMAIL" ]]; then
         gum style --foreground 1 "❌ Email cannot be empty."
@@ -55,10 +59,11 @@ EOF
       fi
     done
 
-    # Print review
+    # === Show a summary ===
     printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" \
       | gum format --theme=dark
 
+    # === Confirm and save ===
     if gum confirm "💾 Save this information?"; then
       mkdir -p "$CONFIG_DIR"
       cat > "$CONFIG_FILE" <<EOF
