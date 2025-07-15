@@ -34,9 +34,7 @@ if ! sudo -v; then
   exit 1
 fi
 
-"$REPO_DIR/modules/install-gum.sh" install
-
-# === Ensure key packages ===
+# === Ensure key packages (curl + git) for repo cloning ===
 ensure_installed() {
   pkg="$1"
   if ! command -v "$pkg" &>/dev/null; then
@@ -48,7 +46,20 @@ ensure_installed() {
   fi
 }
 
+ensure_installed curl
+ensure_installed git
 
+# === Clone repo if not already ===
+if [ -d "$REPO_DIR" ]; then
+  echo "📦 Updating existing repo..."
+  git -C "$REPO_DIR" pull
+else
+  echo "📥 Cloning after-install..."
+  git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
+fi
+
+# === Now we can safely call gum module ===
+"$REPO_DIR/modules/install-gum.sh" install
 
 # === Splash Screen ===
 gum style \
@@ -58,20 +69,6 @@ gum style \
   --foreground 212 \
   --align center \
   "🚀 Starter: After Install"
-
-# === Hide intermediate setup ===
-{
-  ensure_installed curl
-  ensure_installed git
-
-  if [ -d "$REPO_DIR" ]; then
-    echo "📦 Updating existing repo..."
-    git -C "$REPO_DIR" pull
-  else
-    echo "📥 Cloning after-install..."
-    git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
-  fi
-} &>/dev/null
 
 # === Clear screen for next prompt ===
 clear
