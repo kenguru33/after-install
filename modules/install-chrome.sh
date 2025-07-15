@@ -5,7 +5,9 @@ ACTION="${1:-all}"
 SCRIPT_NAME="install-chrome"
 DEB_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 DEB_FILE="/tmp/google-chrome.deb"
-PREF_FILE="$HOME/.config/google-chrome/Default/Preferences"
+PREF_DIR="$HOME/.config/google-chrome/Default"
+PREF_FILE="$PREF_DIR/Preferences"
+DESKTOP_FILE="$HOME/.local/share/applications/google-chrome.desktop"
 
 install() {
   echo "🌐 [$SCRIPT_NAME] Downloading Google Chrome..."
@@ -19,16 +21,34 @@ install() {
 }
 
 config() {
-  echo "⚙️ [$SCRIPT_NAME] Enabling 'Use system title bar and borders'..."
+  echo "⚙️ [$SCRIPT_NAME] Enabling GTK window controls and GNOME theme..."
 
-  if [[ ! -f "$PREF_FILE" ]]; then
-    echo "🚫 [$SCRIPT_NAME] Chrome preferences not found. Please launch Chrome once and close it."
-    exit 1
+  # Create Preferences file if Chrome hasn't been launched yet
+  mkdir -p "$PREF_DIR"
+  if [[ -f "$PREF_FILE" ]]; then
+    echo "🛠️ Patching Preferences to use GTK decorations..."
+    jq '.browser.custom_chrome_frame = false' "$PREF_FILE" > "$PREF_FILE.tmp" && mv "$PREF_FILE.tmp" "$PREF_FILE"
+  else
+    echo "🛠️ Creating Preferences with GTK decoration enabled..."
+    cat <<EOF > "$PREF_FILE"
+{
+  "browser": {
+    "custom_chrome_frame": false
+  }
+}
+EOF
   fi
 
-  jq '.browser.custom_chrome_frame = false' "$PREF_FILE" > "$PREF_FILE.tmp" && mv "$PREF_FILE.tmp" "$PREF_FILE"
+  # Patch desktop file to force GTK theming and Wayland if needed
+  mkdir -p "$(dirname "$DESKTOP_FILE")"
+  cp /usr/share/applications/google-chrome.desktop "$DESKTOP_FILE" 2>/dev/null || true
 
-  echo "✅ [$SCRIPT_NAME] System title bar enabled. Chrome will now use GTK decorations."
+  if [[ -f "$DESKTOP_FILE" ]]; then
+    sed -i 's|Exec=/usr/bin/google-chrome-stable.*|Exec=/usr/bin/google-chrome-stable --gtk-version=4 --ozone-platform=wayland|g' "$DESKTOP_FILE"
+    echo "✅ [$SCRIPT_NAME] Patched launcher Exec line with GTK + Wayland flags."
+  else
+    echo "⚠️ [$SCRIPT_NAME] Failed to patch desktop entry. Chrome may need to be launched once."
+  fi
 }
 
 clean() {
@@ -38,14 +58,17 @@ clean() {
 
 all() {
   install
-  echo "👉 Please launch Chrome once, then run:"
-  echo "   modules/install-chrome.sh config"
+  config
+  clean
 }
 
 case "$ACTION" in
   install) install ;;
-  config) config ;;
-  clean) clean ;;
-  all) all ;;
-  *) echo "❌ [$SCRIPT_NAME] Unknown action: $ACTION. Use: all | install | config | clean" ;;
+  config)  config ;;
+  clean)   clean ;;
+  all)     all ;;
+  *)
+    echo "❌ [$SCRIPT_NAME] Unknown action: $ACTION. Use: all | install | config | clean"
+    exit 1
+    ;;
 esac
