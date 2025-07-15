@@ -1,4 +1,14 @@
+#!/bin/bash
+set -e
+
+MODULE_NAME="user-profile"
+CONFIG_DIR="$HOME/.config/after-install"
+CONFIG_FILE="$CONFIG_DIR/userinfo.config"
+ACTION="${1:-all}"
+
 ask_user_profile() {
+  echo "🧪 Running ask_user_profile()" # debug
+
   gum format --theme=dark <<EOF
 # 👤 Let's personalize your setup
 
@@ -8,13 +18,11 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-  # === Load existing values if present ===
   if [[ -f "$CONFIG_FILE" ]]; then
     # shellcheck disable=SC1090
     source "$CONFIG_FILE"
   fi
 
-  # === Prompt for full name (with default) ===
   while true; do
     USER_NAME=$(gum input \
       --prompt "📝 Full name: " \
@@ -29,7 +37,6 @@ EOF
     fi
   done
 
-  # === Prompt and validate email (with default) ===
   while true; do
     USER_EMAIL=$(gum input \
       --prompt "📧 Email address: " \
@@ -46,11 +53,9 @@ EOF
     fi
   done
 
-  # === Show a summary ===
   printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" \
     | gum format --theme=dark
 
-  # === Confirm and save ===
   gum confirm "💾 Save this information?" || exit 1
 
   mkdir -p "$CONFIG_DIR"
@@ -61,3 +66,18 @@ EOF
 
   gum style --foreground 2 "✅ Saved user info to $CONFIG_FILE"
 }
+
+# === Dispatcher ===
+case "$ACTION" in
+  install|config|all)
+    ask_user_profile
+    ;;
+  clean)
+    rm -f "$CONFIG_FILE"
+    gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
+    ;;
+  *)
+    echo "Usage: $0 [install|config|clean|all]"
+    exit 1
+    ;;
+esac
