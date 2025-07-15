@@ -61,17 +61,15 @@ fi
 # === Now we can safely call gum module ===
 "$REPO_DIR/modules/install-gum.sh" install
 
-# === Splash Screen ===
-gum style \
-  --border double \
-  --margin "1" \
-  --padding "1 3" \
-  --foreground 212 \
-  --align center \
-  "🚀 Starter: After Install"
-
 # === Clear screen for next prompt ===
 clear
+
+gum format --theme=dark <<EOF
+# 🛠️ After Install
+
+A clean and modular bootstrap framework  
+for configuring your terminal and desktop environments.
+EOF
 
 cd "$REPO_DIR"
 
