@@ -13,6 +13,12 @@ if [[ -x "$MODULES/banner.sh" ]]; then
   "$MODULES/banner.sh"
 fi
 
+# === Confirm before anything else ===
+if ! gum confirm "🤔 Do you want to continue with the installation?"; then
+  gum log --level info "🚫 Installation cancelled by user."
+  exit 0
+fi
+
 # === Check for required scripts ===
 if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
   gum style \
@@ -30,12 +36,6 @@ fi
 
 # === Determine action (default: all) ===
 ACTION="${1:-all}"
-
-# === Confirm before continuing ===
-if ! gum confirm "🤔 Do you want to continue with the installation?"; then
-  gum log --level info "🚫 Installation cancelled by user."
-  exit 0
-fi
 
 # === Ask user for name/email ===
 "$MODULES/user-profile.sh" all
