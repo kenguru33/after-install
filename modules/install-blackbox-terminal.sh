@@ -1,77 +1,79 @@
 #!/bin/bash
 set -e
 
-EXTENSION_ID="blur-my-shell@aunetx"
-EXTENSION_DIR="$HOME/.local/share/gnome-shell/extensions/$EXTENSION_ID"
-SCHEMA_FILE="org.gnome.shell.extensions.blur-my-shell.gschema.xml"
-USER_SCHEMA_DIR="$HOME/.local/share/glib-2.0/schemas"
+MODULE_NAME="blackbox-terminal"
+SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
+PALETTE_NAME="catppuccin-mocha"
 ACTION="${1:-all}"
 
-# Load shared dependency installer
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/ensure-gext.sh"
+install_blackbox() {
+  echo "📦 Installing BlackBox Terminal from apt..."
 
-install_extension() {
-  echo "🔌 Installing Blur My Shell extension..."
-  ensure_gext_installed
-  gext install "$EXTENSION_ID"
-}
-
-register_schema() {
-  echo "🧠 Registering GSettings schema for Blur My Shell..."
-
-  local schema_path="$EXTENSION_DIR/schemas/$SCHEMA_FILE"
-  if [[ ! -f "$schema_path" ]]; then
-    echo "❌ Schema file not found: $schema_path"
-    return 1
+  if ! command -v blackbox &>/dev/null; then
+    sudo apt update
+    sudo apt install -y blackbox-terminal
+    echo "✅ BlackBox installed."
+  else
+    echo "ℹ️ BlackBox is already installed."
   fi
-
-  mkdir -p "$USER_SCHEMA_DIR"
-  cp "$schema_path" "$USER_SCHEMA_DIR/"
-  glib-compile-schemas "$USER_SCHEMA_DIR"
 }
 
-configure_extension() {
-  echo "🎛️  Configuring Blur My Shell via GSettings..."
+install_catppuccin_theme() {
+  echo "🎨 Installing Catppuccin Mocha theme..."
+  mkdir -p "$SCHEME_DIR"
 
-  gsettings set org.gnome.shell.extensions.blur-my-shell brightness 0.8
-  gsettings set org.gnome.shell.extensions.blur-my-shell sigma 30
-  gsettings set org.gnome.shell.extensions.blur-my-shell pipeline "'pipeline_default_rounded'"
-  gsettings set org.gnome.shell.extensions.blur-my-shell color-and-noise true
-  gsettings set org.gnome.shell.extensions.blur-my-shell hacks-level 1
+  if [[ ! -f "$SCHEME_DIR/$PALETTE_NAME.json" ]]; then
+    TMP_DIR=$(mktemp -d)
+    git clone --depth=1 https://github.com/catppuccin/tilix.git "$TMP_DIR"
+    cp "$TMP_DIR/themes/$PALETTE_NAME.json" "$SCHEME_DIR/$PALETTE_NAME.json"
+    rm -rf "$TMP_DIR"
+    echo "✅ Theme installed to $SCHEME_DIR"
+  else
+    echo "ℹ️ Theme already installed."
+  fi
 }
 
-enable_extension() {
-  echo "✅ Enabling extension..."
-  gnome-extensions enable "$EXTENSION_ID" || true
+config_blackbox() {
+  echo "🎨 Configuring BlackBox with Catppuccin Mocha + Hack Nerd Font Mono..."
+
+  SCHEMA_ID="org.gnome.blackbox.preferences"
+  PROFILE_PATH="/org/gnome/blackbox/profiles/default/"
+
+  if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
+    gsettings set $SCHEMA_ID font 'Hack Nerd Font Mono 11'
+    gsettings set $SCHEMA_ID theme "$PALETTE_NAME"
+    echo "✅ Configuration applied via GSettings."
+  else
+    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. Skipping font and theme configuration."
+    echo "ℹ️ You may need to launch BlackBox once, or restart GNOME to register schemas."
+  fi
 }
 
-clean_extension() {
-  echo "🧹 Cleaning up Blur My Shell schema..."
-  rm -f "$USER_SCHEMA_DIR/$SCHEMA_FILE"
-  glib-compile-schemas "$USER_SCHEMA_DIR"
+clean_blackbox() {
+  echo "🗑️ Cleaning up BlackBox terminal and theme files..."
+  sudo apt purge -y blackbox-terminal || true
+  rm -f "$SCHEME_DIR/$PALETTE_NAME.json"
+  echo "✅ Cleanup done."
 }
 
 case "$ACTION" in
   install)
-    install_extension
+    install_blackbox
+    install_catppuccin_theme
     ;;
   config)
-    register_schema
-    configure_extension
-    enable_extension
-    ;;
-  all)
-    install_extension
-    register_schema
-    configure_extension
-    enable_extension
+    config_blackbox
     ;;
   clean)
-    clean_extension
+    clean_blackbox
+    ;;
+  all)
+    install_blackbox
+    install_catppuccin_theme
+    config_blackbox
     ;;
   *)
-    echo "Usage: $0 [all|install|config|clean]"
+    echo "Usage: $0 [install|config|clean|all]"
     exit 1
     ;;
 esac
