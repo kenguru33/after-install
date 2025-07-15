@@ -12,26 +12,40 @@ ask_user_profile() {
 
 This information will be used for:
 
-- ✅ Git configuration
-- 🖼️  Gravatar-based profile image
+- ✅ Git configuration  
+- 🖼️  Gravatar profile image
 EOF
 
   gum confirm "Do you want to continue?" || exit 1
 
-  USER_NAME=$(gum input --prompt "📝 Full name: " --placeholder "Bernt Anker")
-  USER_EMAIL=$(gum input --prompt "📧 Email address: " --placeholder "bernt@example.com")
+  # === Prompt for full name ===
+  while true; do
+    USER_NAME=$(gum input --prompt "📝 Full name: " --placeholder "Bernt Anker" --width 50)
+    if [[ -z "$USER_NAME" ]]; then
+      gum style --foreground 1 "❌ Name cannot be empty."
+    else
+      break
+    fi
+  done
 
-  if [[ -z "$USER_NAME" || -z "$USER_EMAIL" ]]; then
-    gum style --foreground 1 "❌ Name and email cannot be empty."
-    exit 1
-  fi
+  # === Prompt and validate email ===
+  while true; do
+    USER_EMAIL=$(gum input --prompt "📧 Email address: " --placeholder "bernt@example.com" --width 50)
+    if [[ -z "$USER_EMAIL" ]]; then
+      gum style --foreground 1 "❌ Email cannot be empty."
+    elif [[ "$USER_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+      break
+    else
+      gum style --foreground 1 "❌ Invalid email format. Please try again."
+    fi
+  done
 
   gum format <<EOF
-✅ Name: **$USER_NAME**
+✅ Name: **$USER_NAME**  
 ✅ Email: **$USER_EMAIL**
 EOF
 
-  gum confirm "Is this correct?" || exit 1
+  gum confirm "Save this information?" || exit 1
 
   mkdir -p "$CONFIG_DIR"
   cat > "$CONFIG_FILE" <<EOF
@@ -55,15 +69,13 @@ clean_user_profile() {
   gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
 }
 
+# === Dispatcher ===
 case "$ACTION" in
   install) ask_user_profile ;;
   config) config_user_profile ;;
-  clean) clean_user_profile ;;
-  all)
-    config_user_profile
-    ;;
+  clean)  clean_user_profile ;;
+  all)    config_user_profile ;;
   *)
-    echo "❌ Unknown action: $ACTION"
     echo "Usage: $0 [install|config|clean|all]"
     exit 1
     ;;

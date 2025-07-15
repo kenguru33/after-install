@@ -63,23 +63,5 @@ else
   git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
 fi
 
-# === Now we can safely call gum module ===
-"$REPO_DIR/modules/install-gum.sh" install
-
-# === Clear screen for next prompt ===
-clear
-
-gum format --theme=dark <<EOF
-# 🛠️ After Install
-
-A clean and modular bootstrap framework  
-for configuring your terminal and desktop environments.
-EOF
-
-cd "$REPO_DIR"
-
-# === Ask user for name/email
-"$REPO_DIR/modules/user-profile.sh" all
-
 # === Run main installer
 bash install.sh all

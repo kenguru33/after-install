@@ -6,6 +6,23 @@ trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
+# === Show intro splash ===
+clear
+gum style \
+  --border double \
+  --margin "1" \
+  --padding "1 3" \
+  --foreground 212 \
+  --border-foreground 104 \
+  "🚀 After Install"
+
+gum format --theme=dark <<EOF
+# 🛠️ After Install
+
+A clean and modular bootstrap framework  
+for configuring your terminal and desktop environments.
+EOF
+
 # === Check for required scripts ===
 if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
   gum style \
@@ -24,14 +41,19 @@ fi
 # === Determine action (default: all) ===
 ACTION="${1:-all}"
 
-# === Check for GNOME Desktop ===
+# === Ensure gum is installed (safely, now that repo is cloned) ===
+"$MODULES/install-gum.sh" install
+
+# === Ask user for name/email ===
+"$MODULES/user-profile.sh" all
+
+# === GNOME or terminal path ===
 if command -v gnome-shell &>/dev/null; then
-  gum log --level info "🖥️ GNOME desktop detected. Running install-desktop.sh..."
+  gum log --level info "🖥️ GNOME desktop detected."
   "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
   DESKTOP_STATUS=$?
 
   if [[ $DESKTOP_STATUS -eq 0 ]]; then
-    # === Fancy logout recommendation and prompt ===
     gum style \
       --border normal \
       --margin "1" \
@@ -57,13 +79,12 @@ if command -v gnome-shell &>/dev/null; then
     gum log --level error "❌ Desktop installation failed. Not prompting for logout."
     exit $DESKTOP_STATUS
   fi
-
 else
   gum log --level info "💻 GNOME not detected. Running install-terminal.sh..."
   "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
 fi
 
-# === Done ===
+# === Final success ===
 gum style \
   --border double \
   --margin "1" \
