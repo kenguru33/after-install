@@ -19,7 +19,7 @@ BACKGROUND_DEST_PATH="$BACKGROUND_DEST_DIR/${THEME_DIR}-${THEME_BACKGROUND}"
 install_theme_packages() {
   echo "📦 Installing required theme packages..."
   sudo apt update
-  sudo apt install -y gnome-tweaks gnome-shell-extensions dconf-cli git gtk2-engines-murrine sassc
+  sudo apt install -y gnome-tweaks gnome-shell-extensions dconf-cli git gtk2-engines-murrine sassc unzip jq
   echo "✅ Packages installed."
 }
 
@@ -38,6 +38,50 @@ install_theme_assets() {
   /tmp/Tela-icon-theme/install.sh -d ~/.icons
 
   echo "✅ Themes installed."
+}
+
+ensure_user_themes_extension() {
+  EXT_UUID="user-theme@gnome-shell-extensions.gcampax.github.com"
+  EXT_DIR="$HOME/.local/share/gnome-shell/extensions/$EXT_UUID"
+
+  if gnome-extensions list | grep -q "$EXT_UUID"; then
+    echo "✅ User Themes extension already installed."
+    return
+  fi
+
+  echo "🔌 Installing User Themes extension..."
+
+  # Get GNOME Shell version
+  GNOME_VERSION=$(gnome-shell --version | awk '{print $3}' | cut -d. -f1,2)
+  META=$(curl -s "https://extensions.gnome.org/extension-query/?search=user-theme" | jq -r '.extensions[] | select(.uuid=="'"$EXT_UUID"'")')
+
+  if [[ -z "$META" ]]; then
+    echo "❌ Failed to fetch metadata for User Themes extension."
+    return
+  fi
+
+  PK=$(echo "$META" | jq -r '.pk')
+  INFO=$(curl -s "https://extensions.gnome.org/extension-info/?pk=${PK}&shell_version=${GNOME_VERSION}")
+  DL_URL="https://extensions.gnome.org$(echo "$INFO" | jq -r '.download_url')"
+
+  if [[ "$DL_URL" == "null" ]]; then
+    echo "❌ Failed to resolve download URL for GNOME $GNOME_VERSION"
+    return
+  fi
+
+  TMP_ZIP=$(mktemp)
+  curl -sL "$DL_URL" -o "$TMP_ZIP"
+
+  mkdir -p "$EXT_DIR"
+  unzip -oq "$TMP_ZIP" -d "$EXT_DIR"
+  rm -f "$TMP_ZIP"
+
+  if [[ -d "$EXT_DIR/schemas" ]]; then
+    echo "🔧 Compiling schemas..."
+    glib-compile-schemas "$EXT_DIR/schemas"
+  fi
+
+  echo "✅ User Themes extension installed."
 }
 
 apply_theme_config() {
@@ -59,10 +103,10 @@ apply_theme_config() {
     echo "⚠️ Background not found: $BACKGROUND_ORG_PATH"
   fi
 
-  EXT_ID="user-theme@gnome-shell-extensions.gcampax.github.com"
-  if gnome-extensions list | grep -q "$EXT_ID"; then
+  EXT_UUID="user-theme@gnome-shell-extensions.gcampax.github.com"
+  if gnome-extensions list | grep -q "$EXT_UUID"; then
     echo "🔁 Enabling User Themes extension..."
-    gnome-extensions enable "$EXT_ID" || true
+    gnome-extensions enable "$EXT_UUID" || true
     sleep 1
     gsettings set org.gnome.shell.extensions.user-theme name "Orchis-$THEME_SHELL_COLOR"
     echo "✅ Shell theme applied and extension enabled."
@@ -71,7 +115,6 @@ apply_theme_config() {
   fi
 
   gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
-
 
   echo "✅ GNOME theme configuration complete."
 }
@@ -96,13 +139,16 @@ case "$1" in
   all)
     install_theme_packages
     install_theme_assets
+    ensure_user_themes_extension
     apply_theme_config
     ;;
   install)
     install_theme_packages
     install_theme_assets
+    ensure_user_themes_extension
     ;;
   config)
+    ensure_user_themes_extension
     apply_theme_config
     ;;
   clean)
