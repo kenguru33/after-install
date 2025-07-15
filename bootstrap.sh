@@ -7,6 +7,7 @@ if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
   exit 1
 fi
 
+# === Re-download self if not run from file ===
 if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
   tmp="/tmp/bootstrap.sh"
   echo "⚙️ Re-downloading script to $tmp for proper execution..."
@@ -33,7 +34,7 @@ if ! sudo -v; then
   exit 1
 fi
 
-# === ensure_installed, repo clone/pull, etc. ===
+# === Ensure key packages ===
 ensure_installed() {
   pkg="$1"
   if ! command -v "$pkg" &>/dev/null; then
@@ -46,19 +47,37 @@ ensure_installed() {
 }
 
 ensure_installed gum
-ensure_installed curl
-ensure_installed git
 
-if [ -d "$REPO_DIR" ]; then
-  echo "📦 Updating existing repo..."
-  git -C "$REPO_DIR" pull
-else
-  echo "📥 Cloning after-install..."
-  git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
-fi
+# === Splash Screen ===
+gum style \
+  --border double \
+  --margin "1" \
+  --padding "1 3" \
+  --foreground 212 \
+  --align center \
+  "🚀 Starter: After Install"
+
+# === Hide intermediate setup ===
+{
+  ensure_installed curl
+  ensure_installed git
+
+  if [ -d "$REPO_DIR" ]; then
+    echo "📦 Updating existing repo..."
+    git -C "$REPO_DIR" pull
+  else
+    echo "📥 Cloning after-install..."
+    git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
+  fi
+} &>/dev/null
+
+# === Clear screen for next prompt ===
+clear
 
 cd "$REPO_DIR"
 
+# === Ask user for name/email
 "$REPO_DIR/modules/user-profile.sh" all
 
+# === Run main installer
 bash install.sh all

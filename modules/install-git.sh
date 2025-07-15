@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+MODULE_NAME="git"
+CONFIG_FILE="$HOME/.config/after-install/userinfo.config"
+ACTION="${1:-all}"
+
 # === Functions ===
 
 install_git() {
@@ -12,9 +16,23 @@ install_git() {
 configure_git() {
   echo "🛠️  Configuring Git..."
 
-  read -p "📝 Enter your full name: " name
-  read -p "📧 Enter your email address: " email
-  read -p "🖊️  Preferred editor (e.g. nano, vim, code, nvim): " editor
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "❌ User info config not found: $CONFIG_FILE"
+    echo "💡 Run user-profile.sh first to set name and email."
+    exit 1
+  fi
+
+  source "$CONFIG_FILE"
+
+  if [[ -z "$name" || -z "$email" ]]; then
+    echo "❌ Invalid user info in $CONFIG_FILE"
+    exit 1
+  fi
+
+  editor=$(gum input --prompt "🖊️ Preferred editor (e.g. nano, vim, code): " --placeholder "nano")
+  if [[ -z "$editor" ]]; then
+    editor="nano"
+  fi
 
   git config --global user.name "$name"
   git config --global user.email "$email"
@@ -23,7 +41,6 @@ configure_git() {
   git config --global pull.rebase false
   git config --global credential.helper store
 
-  # Optional aliases and extras
   git config --global color.ui auto
   git config --global core.autocrlf input
   git config --global alias.st status
@@ -45,7 +62,7 @@ show_help() {
 
 # === Entry Point ===
 
-case "$1" in
+case "$ACTION" in
   all)
     install_git
     configure_git
