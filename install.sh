@@ -4,13 +4,17 @@ set -e
 trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# === Load modules ===
 MODULES="$SCRIPT_DIR/modules"
 
 # === Check for required scripts ===
 if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
-  gum log --level error "Missing or non-executable: $MODULES/check-sudo.sh"
+  gum style \
+    --border normal \
+    --margin "1" \
+    --padding "1 3" \
+    --foreground 1 \
+    --border-foreground 9 \
+    "❌ Missing or non-executable: $MODULES/check-sudo.sh"
   exit 1
 fi
 
@@ -24,12 +28,46 @@ ACTION="${1:-all}"
 if command -v gnome-shell &>/dev/null; then
   gum log --level info "🖥️ GNOME desktop detected. Running install-desktop.sh..."
   "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
+  DESKTOP_STATUS=$?
 
-  # === Recommend logout to apply changes ===
-  gum log --level warn "🔄 You may need to log out or restart your session to apply all desktop changes."
+  if [[ $DESKTOP_STATUS -eq 0 ]]; then
+    # === Fancy logout recommendation and prompt ===
+    gum style \
+      --border normal \
+      --margin "1" \
+      --padding "1 3" \
+      --foreground 208 \
+      --border-foreground 166 \
+      "🔄 To apply all GNOME desktop changes, you should log out and back in."
+
+    if gum confirm "🚪 Do you want to log out now?"; then
+      if command -v gnome-session-quit &>/dev/null; then
+        gnome-session-quit --logout --no-prompt
+      else
+        gum style \
+          --border normal \
+          --margin "1" \
+          --padding "1 3" \
+          --foreground 1 \
+          --border-foreground 9 \
+          "⚠️  Unable to log out automatically. Please log out manually."
+      fi
+    fi
+  else
+    gum log --level error "❌ Desktop installation failed. Not prompting for logout."
+    exit $DESKTOP_STATUS
+  fi
+
 else
   gum log --level info "💻 GNOME not detected. Running install-terminal.sh..."
   "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
 fi
 
-gum log --level success "✅ System '$ACTION' setup completed successfully!"
+# === Done ===
+gum style \
+  --border double \
+  --margin "1" \
+  --padding "1 3" \
+  --foreground 10 \
+  --border-foreground 2 \
+  "✅ System '$ACTION' setup completed successfully!"
