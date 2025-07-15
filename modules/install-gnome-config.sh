@@ -15,7 +15,7 @@ install_config() {
     exit 1
   fi
 
-  echo "📥 Copying $WALLPAPER_SOURCE to $WALLPAPER_DEST"
+  echo "📥 Copying wallpaper to Pictures folder..."
   mkdir -p "$HOME/Pictures"
   cp "$WALLPAPER_SOURCE" "$WALLPAPER_DEST"
   echo "✅ Wallpaper copied to: $WALLPAPER_DEST"
