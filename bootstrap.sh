@@ -16,6 +16,7 @@ if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
   else
     wget -qO "$tmp" "https://.../bootstrap.sh"
   fi
+  chmod +x "$tmp"
   exec bash "$tmp" "$@"
 fi
 
@@ -26,6 +27,8 @@ if [ "$(id -u)" -eq 0 ]; then
   echo "❌ Do not run as root. Use a normal user."
   exit 1
 fi
+
+REAL_USER="$(logname 2>/dev/null || echo "$USER")"
 
 if ! sudo -v >/dev/null 2>&1; then
   echo "🚫 User '$REAL_USER' does not have sudo privileges or authentication failed."
@@ -63,5 +66,7 @@ else
   git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
 fi
 
-# === Run main installer
+cd "$REPO_DIR"
+
+echo "✅ Bootstrap completed. Running install.sh..."
 bash install.sh all
