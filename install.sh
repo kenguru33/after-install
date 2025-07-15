@@ -31,6 +31,12 @@ fi
 # === Determine action (default: all) ===
 ACTION="${1:-all}"
 
+# === Confirm before continuing ===
+if ! gum confirm "🤔 Do you want to continue with the installation?"; then
+  gum log --level info "🚫 Installation cancelled by user."
+  exit 0
+fi
+
 # === Ask user for name/email ===
 "$MODULES/user-profile.sh" all
 

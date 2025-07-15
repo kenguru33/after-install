@@ -1,90 +1,33 @@
 #!/bin/bash
 set -e
 
-trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MODULES="$SCRIPT_DIR/modules"
-
-clear
-
-# === Run the banner ===
-if [[ -x "$MODULES/banner.sh" ]]; then
-  "$MODULES/banner.sh"
-fi
-
-# === Check for required scripts ===
-if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
-  gum style \
-    --border normal \
-    --margin "1" \
-    --padding "1 3" \
-    --foreground 1 \
-    --border-foreground 9 \
-    "❌ Missing or non-executable: $MODULES/check-sudo.sh"
-  exit 1
-fi
-
-# === Run sudo check ===
-"$MODULES/check-sudo.sh"
-
-# === Determine action (default: all) ===
-ACTION="${1:-all}"
-
-# === Confirm before continuing ===
-if ! gum confirm "🤔 Do you want to continue with the installation?"; then
-  gum log --level info "🚫 Installation cancelled by user."
-  exit 0
-fi
-
-# === Ask user for name/email ===
-"$MODULES/user-profile.sh" all
-
-# === GNOME or terminal path ===
-if command -v gnome-shell &>/dev/null; then
-  gum log --level info "🖥️ GNOME desktop detected. Including full desktop environment setup."
-  "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
-  DESKTOP_STATUS=$?
-else
-  gum log --level info "💻 GNOME not detected. Running terminal only installation."
-  "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
-  DESKTOP_STATUS=$?
-fi
-
-# === Final success + optional logout ===
-if [[ $DESKTOP_STATUS -eq 0 ]]; then
-  gum style \
-    --border double \
-    --margin "1" \
-    --padding "1 3" \
-    --foreground 10 \
-    --border-foreground 2 \
-    "✅ System '$ACTION' setup completed successfully!"
-
-  if command -v gnome-shell &>/dev/null; then
-    gum style \
-      --border normal \
-      --margin "1" \
-      --padding "1 3" \
-      --foreground 208 \
-      --border-foreground 166 \
-      "🔄 To apply all GNOME desktop changes, you should log out and back in."
-
-    if gum confirm "🚪 Do you want to log out now?"; then
-      if command -v gnome-session-quit &>/dev/null; then
-        gnome-session-quit --logout --no-prompt
-      else
-        gum style \
-          --border normal \
-          --margin "1" \
-          --padding "1 3" \
-          --foreground 1 \
-          --border-foreground 9 \
-          "⚠️  Unable to log out automatically. Please log out manually."
-      fi
-    fi
+# Show a styled logo banner using figlet + gum
+show_banner() {
+  if ! command -v figlet &>/dev/null; then
+    echo "❌ figlet is not installed. Skipping banner."
+    return
   fi
-else
-  gum log --level error "❌ Setup failed during installation. Not prompting for logout."
-  exit $DESKTOP_STATUS
-fi
+
+  if ! command -v gum &>/dev/null; then
+    echo "❌ gum is not installed. Skipping banner."
+    return
+  fi
+
+  logo=$(figlet "After Install")
+
+  echo "$logo" | gum style \
+    --foreground 212 \
+    --margin "1 2" \
+    --padding "1 4"
+
+  echo
+  gum style \
+    --foreground 244 \
+    --align center \
+    --width 60 \
+    --padding "0 1" \
+    "A post-install automation tool to customize your Linux desktop with themes, terminals, fonts, and extensions."
+  echo
+}
+
+show_banner
