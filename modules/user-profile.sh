@@ -27,21 +27,28 @@ EOF
     USER_NAME=$(gum input \
       --prompt "📝 Full name: " \
       --placeholder "Bernt Anker" \
-      --value "${name:-}" \
-      --width 50)
+      --value "${name:-}")
+
+    # Strip CR/LF just in case
     USER_NAME=$(echo "$USER_NAME" | tr -d '\r\n')
 
-    # === Prompt for email (no validation) ===
+    # Debug
+    echo "DEBUG: USER_NAME='$USER_NAME'" >&2
+
+    # === Prompt for email ===
     USER_EMAIL=$(gum input \
       --prompt "📧 Email address: " \
       --placeholder "bernt@example.com" \
-      --value "${email:-}" \
-      --width 50)
-    USER_EMAIL=$(echo "$USER_EMAIL" | tr -d '\r\n')
+      --value "${email:-}")
 
-    # === Review info ===
-    printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" \
-      | gum format --theme=dark
+    USER_EMAIL=$(echo "$USER_EMAIL" | tr -d '\r\n')
+    echo "DEBUG: USER_EMAIL='$USER_EMAIL'" >&2
+
+    # === Show review using safer method ===
+    gum format --theme=dark <<<"# Review your info
+
+✅ Name: **$USER_NAME**
+✅ Email: **$USER_EMAIL**"
 
     # === Confirm and save ===
     if gum confirm "💾 Save this information?"; then
