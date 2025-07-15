@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-trap 'echo "❌ An error occurred. Exiting." >&2' ERR
+trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -10,7 +10,7 @@ MODULES="$SCRIPT_DIR/modules"
 
 # === Check for required scripts ===
 if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
-  echo "❌ Missing or non-executable: $MODULES/check-sudo.sh"
+  gum log --level error "Missing or non-executable: $MODULES/check-sudo.sh"
   exit 1
 fi
 
@@ -22,11 +22,14 @@ ACTION="${1:-all}"
 
 # === Check for GNOME Desktop ===
 if command -v gnome-shell &>/dev/null; then
-  echo "🖥️ GNOME desktop detected. Running install-desktop.sh..."
+  gum log --level info "🖥️ GNOME desktop detected. Running install-desktop.sh..."
   "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
+
+  # === Recommend logout to apply changes ===
+  gum log --level warn "🔄 You may need to log out or restart your session to apply all desktop changes."
 else
-  echo "💻 GNOME not detected. Running install-terminal.sh..."
+  gum log --level info "💻 GNOME not detected. Running install-terminal.sh..."
   "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
 fi
 
-echo "✅ System '$ACTION' setup completed successfully!"
+gum log --level success "✅ System '$ACTION' setup completed successfully!"

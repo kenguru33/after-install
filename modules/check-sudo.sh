@@ -24,5 +24,5 @@ if ! sudo -v >/dev/null 2>&1; then
 fi
 
 sudo -n true
-echo "✅ Sudo access confirmed for '$REAL_USER'."
+# echo "✅ Sudo access confirmed for '$REAL_USER'."
 

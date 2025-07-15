@@ -27,10 +27,15 @@ if [ "$(id -u)" -eq 0 ]; then
   exit 1
 fi
 
-# === Validate sudo with prompt ===
-if ! sudo -v; then
-  echo "❌ Unable to authenticate with sudo."
-  echo "💡 Run this script in a terminal where you can enter your password."
+if ! sudo -v >/dev/null 2>&1; then
+  echo "🚫 User '$REAL_USER' does not have sudo privileges or authentication failed."
+  echo ""
+  echo "🛠️  To give this user sudo access:"
+  echo "   1. Switch to root:         su -"
+  echo "   2. Run this command:       usermod -aG sudo $REAL_USER"
+  echo "   3. Log out and log in again (or reboot)"
+  echo ""
+  echo "📄 Ensure $REAL_USER is listed in /etc/sudoers (directly or via group)."
   exit 1
 fi
 
