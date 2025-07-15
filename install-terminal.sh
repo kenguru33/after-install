@@ -3,7 +3,7 @@ set -e
 
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
 # === Check for required scripts ===
@@ -18,30 +18,36 @@ fi
 # === Dispatch actions to modules ===
 ACTION="${1:-all}"
 
+run_with_spinner() {
+  TITLE="$1"
+  CMD="$2"
+  gum spin --title "$TITLE" -- bash -c "$CMD"
+}
+
 case "$ACTION" in
   all)
-    "$MODULES/install-extra-packages.sh" all
-    "$MODULES/install-git.sh" all
-    "$MODULES/install-zsh.sh" all
-    "$MODULES/install-nerdfonts.sh" all
+    run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh all"
+    run_with_spinner "Installing Git..." "$MODULES/install-git.sh all"
+    run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh all"
+    run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh all"
     ;;
   install)
-    "$MODULES/install-extra-packages.sh" install
-    "$MODULES/install-git.sh" install
-    "$MODULES/install-zsh.sh" install
-    "$MODULES/install-nerdfonts.sh" install
+    run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh install"
+    run_with_spinner "Installing Git..." "$MODULES/install-git.sh install"
+    run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh install"
+    run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh install"
     ;;
   config)
-    "$MODULES/install-extra-packages.sh" config
-    "$MODULES/install-git.sh" config
-    "$MODULES/install-zsh.sh" config
-    "$MODULES/install-nerdfonts.sh" config
+    run_with_spinner "Configuring extra packages..." "$MODULES/install-extra-packages.sh config"
+    run_with_spinner "Configuring Git..." "$MODULES/install-git.sh config"
+    run_with_spinner "Configuring Zsh..." "$MODULES/install-zsh.sh config"
+    run_with_spinner "Configuring Nerd Fonts..." "$MODULES/install-nerdfonts.sh config"
     ;;
   clean)
-    "$MODULES/install-git.sh" clean
-    "$MODULES/install-nerdfonts.sh" clean
-    "$MODULES/install-zsh.sh" clean
-    "$MODULES/install-extra-packages.sh" clean
+    run_with_spinner "Cleaning Git config..." "$MODULES/install-git.sh clean"
+    run_with_spinner "Cleaning Nerd Fonts..." "$MODULES/install-nerdfonts.sh clean"
+    run_with_spinner "Cleaning Zsh..." "$MODULES/install-zsh.sh clean"
+    run_with_spinner "Cleaning extra packages..." "$MODULES/install-extra-packages.sh clean"
     ;;
   *)
     echo "Usage: $0 [all|install|config|clean]"
