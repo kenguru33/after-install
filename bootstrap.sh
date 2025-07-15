@@ -20,6 +20,7 @@ if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
     wget -qO "$tmp" "https://.../bootstrap.sh"
   fi
   chmod +x "$tmp"
+  clear
   exec bash "$tmp" "$@"
 fi
 
