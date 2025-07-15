@@ -45,6 +45,7 @@ ensure_installed() {
   fi
 }
 
+ensure_installed gum
 ensure_installed curl
 ensure_installed git
 
@@ -57,4 +58,7 @@ else
 fi
 
 cd "$REPO_DIR"
+
+"$REPO_DIR/modules/user-profile.sh" all
+
 bash install.sh all
