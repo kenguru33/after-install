@@ -5,12 +5,11 @@ trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 MODULE_NAME="blackbox-terminal"
 SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
 PALETTE_NAME="catppuccin-mocha"
-SCHEMA_ID="com.raggesilver.BlackBox"
 ACTION="${1:-all}"
+SCHEMA_ID="com.raggesilver.BlackBox"
 
 install_blackbox() {
   echo "📦 Installing BlackBox Terminal from apt..."
-
   if ! command -v blackbox &>/dev/null; then
     sudo apt update
     sudo apt install -y blackbox-terminal
@@ -31,7 +30,7 @@ install_catppuccin_theme() {
     rm -rf "$TMP_DIR"
     echo "✅ Theme installed to $SCHEME_DIR"
   else
-    echo "ℹ️ Theme already installed."
+    echo "ℹ️ Theme already exists."
   fi
 }
 
@@ -40,14 +39,21 @@ config_blackbox() {
 
   if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
     gsettings set "$SCHEMA_ID" font 'Hack Nerd Font Mono 11'
-    gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
-    gsettings set "$SCHEMA_ID" theme-light "$PALETTE_NAME"
-    gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
     gsettings set "$SCHEMA_ID" terminal-padding '(12, 12, 12, 12)'
+
+    if [[ -f "$SCHEME_DIR/$PALETTE_NAME.json" ]]; then
+      gsettings set "$SCHEMA_ID" style-preference 'custom'
+      gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
+      gsettings set "$SCHEMA_ID" theme-light "$PALETTE_NAME"
+      echo "✅ Custom theme set to '$PALETTE_NAME'"
+    else
+      echo "⚠️ Custom theme '$PALETTE_NAME.json' not found in $SCHEME_DIR"
+      echo "➡️ Skipping theme setting — fallback to built-in theme."
+    fi
 
     echo "✅ Configuration applied via GSettings."
   else
-    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. You may need to launch BlackBox once or restart GNOME."
+    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. You may need to launch BlackBox once or reboot GNOME."
   fi
 }
 
