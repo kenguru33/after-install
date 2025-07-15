@@ -128,13 +128,13 @@ config_extensions() {
   fi
 
   echo "🧱 Configuring Tiling Shell..."
-  gsettings set org.gnome.shell.extensions.tilingshell inner-gaps 8
-  gsettings set org.gnome.shell.extensions.tilingshell outer-gaps 10
-  gsettings set org.gnome.shell.extensions.tilingshell enable-tiling-system true
-  gsettings set org.gnome.shell.extensions.tilingshell enable-autotiling true
-  gsettings set org.gnome.shell.extensions.tilingshell enable-snap-assist true
-  gsettings set org.gnome.shell.extensions.tilingshell show-indicator true
-  gsettings set org.gnome.shell.extensions.tilingshell window-border-width 2
+  #gsettings set org.gnome.shell.extensions.tilingshell inner-gaps 8
+  #gsettings set org.gnome.shell.extensions.tilingshell outer-gaps 10
+  #gsettings set org.gnome.shell.extensions.tilingshell enable-tiling-system true
+  #gsettings set org.gnome.shell.extensions.tilingshell enable-autotiling true
+  #gsettings set org.gnome.shell.extensions.tilingshell enable-snap-assist true
+  #gsettings set org.gnome.shell.extensions.tilingshell show-indicator true
+  #gsettings set org.gnome.shell.extensions.tilingshell window-border-width 2
 }
 
 reset_extensions() {
