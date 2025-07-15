@@ -6,9 +6,6 @@ trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
-# === Ensure gum is installed (safely, now that repo is cloned) ===
-"$MODULES/install-gum.sh" install
-
 gum format --theme=dark <<EOF
 # 🛠️ After Install
 

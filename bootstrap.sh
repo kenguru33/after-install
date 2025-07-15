@@ -58,6 +58,17 @@ ensure_installed() {
 ensure_installed curl
 ensure_installed git
 
+# === Ensure gum is installed ===
+GUM_VERSION="0.14.3"
+if ! command -v gum &>/dev/null; then
+  echo "✨ Installing gum..."
+  wget -qO /tmp/gum.deb "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_amd64.deb"
+  sudo apt-get install -y --allow-downgrades /tmp/gum.deb
+  rm /tmp/gum.deb
+else
+  echo "✅ gum is already installed."
+fi
+
 # === Clone or update the repo ===
 if [ -d "$REPO_DIR" ]; then
   echo "📦 Updating existing repo at $REPO_DIR..."
