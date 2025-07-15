@@ -16,8 +16,6 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-  gum confirm "Do you want to continue?" || exit 1
-
   # === Prompt for full name ===
   while true; do
     USER_NAME=$(gum input --prompt "📝 Full name: " --placeholder "Bernt Anker" --width 50)
