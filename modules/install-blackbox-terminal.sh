@@ -40,7 +40,7 @@ config_blackbox() {
 
   if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
     gsettings set "$SCHEMA_ID" font 'Hack Nerd Font Mono 11'
-    gsettings set "$SCHEMA_ID" opacity 0.95
+    gsettings set "$SCHEMA_ID" opacity '0.95'
     gsettings set "$SCHEMA_ID" terminal-padding '12px'
     gsettings set "$SCHEMA_ID" scrollback-lines 10000
     gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
