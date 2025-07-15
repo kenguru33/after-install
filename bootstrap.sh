@@ -69,10 +69,10 @@ fi
 # === Clone or update repo silently ===
 if [ -d "$REPO_DIR" ]; then
   echo "📦 Updating existing repo..."
-  git -C "$REPO_DIR" pull --quiet
+  git -C "$REPO_DIR" pull --quiet >/dev/null 2>&1
 else
   echo "📥 Cloning after-install repo..."
-  git clone --quiet https://github.com/kenguru33/after-install.git "$REPO_DIR"
+  git clone --quiet https://github.com/kenguru33/after-install.git "$REPO_DIR" >/dev/null 2>&1
 fi
 
 # === Run main installer ===
