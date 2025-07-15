@@ -1,11 +1,3 @@
-#!/bin/bash
-set -e
-
-MODULE_NAME="user-profile"
-CONFIG_DIR="$HOME/.config/after-install"
-CONFIG_FILE="$CONFIG_DIR/userinfo.config"
-ACTION="${1:-all}"
-
 ask_user_profile() {
   gum format --theme=dark <<EOF
 # 👤 Let's personalize your setup
@@ -38,12 +30,11 @@ EOF
     fi
   done
 
-  gum format <<EOF
-✅ Name: **$USER_NAME**  
-✅ Email: **$USER_EMAIL**
-EOF
+  # === Prettier summary using printf + gum format ===
+  printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" | gum format --theme=dark
 
-  gum confirm "Save this information?" || exit 1
+  # === Confirm and save ===
+  gum confirm "💾 Save this information?" || exit 1
 
   mkdir -p "$CONFIG_DIR"
   cat > "$CONFIG_FILE" <<EOF
@@ -51,30 +42,5 @@ name="$USER_NAME"
 email="$USER_EMAIL"
 EOF
 
-  gum style --foreground 2 "💾 Saved user info to $CONFIG_FILE"
+  gum style --foreground 2 "✅ Saved user info to $CONFIG_FILE"
 }
-
-config_user_profile() {
-  if [[ -f "$CONFIG_FILE" ]]; then
-    gum style --foreground 2 "ℹ️  User info already exists: $CONFIG_FILE"
-  else
-    ask_user_profile
-  fi
-}
-
-clean_user_profile() {
-  rm -f "$CONFIG_FILE"
-  gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
-}
-
-# === Dispatcher ===
-case "$ACTION" in
-  install) ask_user_profile ;;
-  config) config_user_profile ;;
-  clean)  clean_user_profile ;;
-  all)    config_user_profile ;;
-  *)
-    echo "Usage: $0 [install|config|clean|all]"
-    exit 1
-    ;;
-esac
