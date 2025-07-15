@@ -23,6 +23,8 @@ if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
   exec bash "$tmp" "$@"
 fi
 
+clear
+
 # === Prevent root execution ===
 if [ "$(id -u)" -eq 0 ]; then
   echo "❌ Do not run as root. Use a normal user."
