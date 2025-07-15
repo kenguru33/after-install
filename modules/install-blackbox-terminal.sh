@@ -3,9 +3,9 @@ set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 MODULE_NAME="blackbox-terminal"
-SCHEMA_ID="com.raggesilver.BlackBox"
 SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
 PALETTE_NAME="catppuccin-mocha"
+SCHEMA_ID="com.raggesilver.BlackBox"
 ACTION="${1:-all}"
 
 install_blackbox() {
@@ -22,7 +22,6 @@ install_blackbox() {
 
 install_catppuccin_theme() {
   echo "🎨 Installing Catppuccin Mocha theme..."
-
   mkdir -p "$SCHEME_DIR"
 
   if [[ ! -f "$SCHEME_DIR/$PALETTE_NAME.json" ]]; then
@@ -41,17 +40,14 @@ config_blackbox() {
 
   if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
     gsettings set "$SCHEMA_ID" font 'Hack Nerd Font Mono 11'
-    gsettings set "$SCHEMA_ID" terminal-padding 12
-    gsettings set "$SCHEMA_ID" scrollback-lines 10000
     gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
-    gsettings set "$SCHEMA_ID" style-preference 'dark'
-    gsettings set "$SCHEMA_ID" cursor-shape 'block'
-    gsettings set "$SCHEMA_ID" cursor-blink-mode 'system'
-    gsettings set "$SCHEMA_ID" terminal-bell false
-    gsettings set "$SCHEMA_ID" pretty true
+    gsettings set "$SCHEMA_ID" theme-light "$PALETTE_NAME"
+    gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
+    gsettings set "$SCHEMA_ID" terminal-padding '(12, 12, 12, 12)'
+
     echo "✅ Configuration applied via GSettings."
   else
-    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. Please launch BlackBox once, then re-run: $0 config"
+    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. You may need to launch BlackBox once or restart GNOME."
   fi
 }
 
