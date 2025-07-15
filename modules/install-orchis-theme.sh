@@ -30,7 +30,7 @@ install_theme_assets() {
   if [ ! -d /tmp/Orchis-theme ]; then
     git clone https://github.com/vinceliuice/Orchis-theme.git /tmp/Orchis-theme
   fi
-  /tmp/Orchis-theme/install.sh --tweaks "$THEME_TWEAKS" -l -c "$THEME_COLOR" -s standard
+  /tmp/Orchis-theme/install.sh --tweaks "$THEME_TWEAKS" -l 
 
   if [ ! -d /tmp/Tela-icon-theme ]; then
     git clone https://github.com/vinceliuice/Tela-icon-theme.git /tmp/Tela-icon-theme
