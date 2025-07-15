@@ -6,15 +6,8 @@ trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
-# === Show intro splash ===
-clear
-gum style \
-  --border double \
-  --margin "1" \
-  --padding "1 3" \
-  --foreground 212 \
-  --border-foreground 104 \
-  "🚀 After Install"
+# === Ensure gum is installed (safely, now that repo is cloned) ===
+"$MODULES/install-gum.sh" install
 
 gum format --theme=dark <<EOF
 # 🛠️ After Install
@@ -40,9 +33,6 @@ fi
 
 # === Determine action (default: all) ===
 ACTION="${1:-all}"
-
-# === Ensure gum is installed (safely, now that repo is cloned) ===
-"$MODULES/install-gum.sh" install
 
 # === Ask user for name/email ===
 "$MODULES/user-profile.sh" all
