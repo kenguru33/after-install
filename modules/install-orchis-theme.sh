@@ -70,6 +70,9 @@ apply_theme_config() {
     echo "❌ User Themes extension not found. Cannot apply shell theme."
   fi
 
+  gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
+
+
   echo "✅ GNOME theme configuration complete."
 }
 
