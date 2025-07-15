@@ -34,6 +34,8 @@ if ! sudo -v; then
   exit 1
 fi
 
+"$REPO_DIR/modules/install-gum.sh" install
+
 # === Ensure key packages ===
 ensure_installed() {
   pkg="$1"
@@ -46,7 +48,7 @@ ensure_installed() {
   fi
 }
 
-ensure_installed gum
+
 
 # === Splash Screen ===
 gum style \
