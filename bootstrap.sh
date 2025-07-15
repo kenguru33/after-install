@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-# === Ensure proper download environment ===
+# === Ensure curl or wget is available ===
 if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
   echo "❌ Neither curl nor wget is available for downloading."
   exit 1
 fi
 
-# === Re-download self if not run from file ===
+# === Re-download self if not run as a file ===
 if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
   tmp="/tmp/bootstrap.sh"
   echo "⚙️ Re-downloading script to $tmp for proper execution..."
@@ -22,12 +22,13 @@ fi
 
 REPO_DIR="$HOME/.after-install"
 
-# === Prevent running as root ===
+# === Prevent root execution ===
 if [ "$(id -u)" -eq 0 ]; then
   echo "❌ Do not run as root. Use a normal user."
   exit 1
 fi
 
+# === Validate sudo access ===
 REAL_USER="$(logname 2>/dev/null || echo "$USER")"
 
 if ! sudo -v >/dev/null 2>&1; then
@@ -42,7 +43,7 @@ if ! sudo -v >/dev/null 2>&1; then
   exit 1
 fi
 
-# === Ensure key packages (curl + git) for repo cloning ===
+# === Ensure curl and git are installed ===
 ensure_installed() {
   pkg="$1"
   if ! command -v "$pkg" &>/dev/null; then
@@ -57,16 +58,26 @@ ensure_installed() {
 ensure_installed curl
 ensure_installed git
 
-# === Clone repo if not already ===
+# === Clone or update the repo ===
 if [ -d "$REPO_DIR" ]; then
-  echo "📦 Updating existing repo..."
+  echo "📦 Updating existing repo at $REPO_DIR..."
   git -C "$REPO_DIR" pull
 else
-  echo "📥 Cloning after-install..."
+  echo "📥 Cloning after-install repo to $REPO_DIR..."
   git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
 fi
 
+# === Change into repo directory ===
 cd "$REPO_DIR"
 
+# === Check for install.sh ===
+if [[ ! -f "install.sh" ]]; then
+  echo "❌ install.sh not found in $REPO_DIR"
+  echo "📂 Contents:"
+  ls -la "$REPO_DIR"
+  exit 1
+fi
+
+# === Run main installer ===
 echo "✅ Bootstrap completed. Running install.sh..."
 bash install.sh all
