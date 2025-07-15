@@ -37,6 +37,18 @@ fi
 # === Determine action (default: all) ===
 ACTION="${1:-all}"
 
+# === Check user-profile.sh exists ===
+if [[ ! -x "$MODULES/user-profile.sh" ]]; then
+  gum style \
+    --border normal \
+    --margin "1" \
+    --padding "1 3" \
+    --foreground 1 \
+    --border-foreground 9 \
+    "❌ Missing or non-executable: $MODULES/user-profile.sh"
+  exit 1
+fi
+
 # === Ask user for name/email ===
 "$MODULES/user-profile.sh" all
 
@@ -59,7 +71,7 @@ if [[ $DESKTOP_STATUS -eq 0 ]]; then
     --padding "1 3" \
     --foreground 10 \
     --border-foreground 2 \
-    "✅ System '$ACTION' setup completed successfully!"
+    "✅ System \"$ACTION\" setup completed successfully!"
 
   if command -v gnome-shell &>/dev/null; then
     gum style \
