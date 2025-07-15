@@ -3,14 +3,13 @@ set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 MODULE_NAME="blackbox-terminal"
-SCHEMA_ID="com.raggesilver.BlackBox"
 SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
-PALETTE_NAME="catppuccin-mocha"
+PALETTE_NAME="Catppuccin Mocha"
+PALETTE_FILE="catppuccin-mocha"
 ACTION="${1:-all}"
 
 install_blackbox() {
   echo "📦 Installing BlackBox Terminal from apt..."
-
   if ! command -v blackbox &>/dev/null; then
     sudo apt update
     sudo apt install -y blackbox-terminal
@@ -24,10 +23,10 @@ install_catppuccin_theme() {
   echo "🎨 Installing Catppuccin Mocha theme..."
   mkdir -p "$SCHEME_DIR"
 
-  if [[ ! -f "$SCHEME_DIR/$PALETTE_NAME.json" ]]; then
+  if [[ ! -f "$SCHEME_DIR/$PALETTE_FILE.json" ]]; then
     TMP_DIR=$(mktemp -d)
     git clone --depth=1 https://github.com/catppuccin/tilix.git "$TMP_DIR"
-    cp "$TMP_DIR/themes/$PALETTE_NAME.json" "$SCHEME_DIR/$PALETTE_NAME.json"
+    cp "$TMP_DIR/themes/$PALETTE_FILE.json" "$SCHEME_DIR/$PALETTE_FILE.json"
     rm -rf "$TMP_DIR"
     echo "✅ Theme installed to $SCHEME_DIR"
   else
@@ -38,28 +37,24 @@ install_catppuccin_theme() {
 config_blackbox() {
   echo "🎨 Configuring BlackBox with Catppuccin Mocha + Hack Nerd Font Mono..."
 
+  SCHEMA_ID="com.raggesilver.BlackBox"
+
   if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
-    gsettings set "$SCHEMA_ID" font 'Hack Nerd Font Mono 11'
-    gsettings set "$SCHEMA_ID" terminal-padding '(12, 12, 12, 12)'
-    gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
-
-    if gsettings range "$SCHEMA_ID" style-preference | grep -q '2'; then
-      gsettings set "$SCHEMA_ID" style-preference 2
-    else
-      echo "⚠️ Style preference 'dark' not supported. Falling back to 'auto'."
-      gsettings set "$SCHEMA_ID" style-preference 0
-    fi
-
+    gsettings set $SCHEMA_ID font 'Hack Nerd Font Mono 11'
+    gsettings set $SCHEMA_ID terminal-padding "(uint32 12, uint32 12, uint32 12, uint32 12)"
+    gsettings set $SCHEMA_ID theme-dark "$PALETTE_NAME"
+    gsettings set $SCHEMA_ID style-preference 2  # Force dark mode
     echo "✅ Configuration applied via GSettings."
   else
-    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. Launch BlackBox once and try again."
+    echo "⚠️ GSettings schema '$SCHEMA_ID' not found. Skipping configuration."
+    echo "ℹ️ You may need to launch BlackBox once or reboot to register the schema."
   fi
 }
 
 clean_blackbox() {
   echo "🗑️ Cleaning up BlackBox terminal and theme files..."
   sudo apt purge -y blackbox-terminal || true
-  rm -f "$SCHEME_DIR/$PALETTE_NAME.json"
+  rm -f "$SCHEME_DIR/$PALETTE_FILE.json"
   echo "✅ Cleanup done."
 }
 
