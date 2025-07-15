@@ -7,8 +7,6 @@ CONFIG_FILE="$CONFIG_DIR/userinfo.config"
 ACTION="${1:-all}"
 
 ask_user_profile() {
-  echo "🧪 Running ask_user_profile()" # debug
-
   gum format --theme=dark <<EOF
 # 👤 Let's personalize your setup
 
@@ -18,17 +16,19 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
+  # === Load existing values if present ===
   if [[ -f "$CONFIG_FILE" ]]; then
     # shellcheck disable=SC1090
     source "$CONFIG_FILE"
   fi
 
+  # === Prompt for full name (with default) ===
   while true; do
-    USER_NAME=$(gum input \
+    USER_NAME="$(gum input \
       --prompt "📝 Full name: " \
       --placeholder "Bernt Anker" \
       --value "${name:-}" \
-      --width 50)
+      --width 50 | tr -d '\r')"
 
     if [[ -z "$USER_NAME" ]]; then
       gum style --foreground 1 "❌ Name cannot be empty."
@@ -37,12 +37,13 @@ EOF
     fi
   done
 
+  # === Prompt and validate email (with default) ===
   while true; do
-    USER_EMAIL=$(gum input \
+    USER_EMAIL="$(gum input \
       --prompt "📧 Email address: " \
       --placeholder "bernt@example.com" \
       --value "${email:-}" \
-      --width 50)
+      --width 50 | tr -d '\r')"
 
     if [[ -z "$USER_EMAIL" ]]; then
       gum style --foreground 1 "❌ Email cannot be empty."
@@ -53,9 +54,11 @@ EOF
     fi
   done
 
+  # === Show a summary ===
   printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" \
     | gum format --theme=dark
 
+  # === Confirm and save ===
   gum confirm "💾 Save this information?" || exit 1
 
   mkdir -p "$CONFIG_DIR"
