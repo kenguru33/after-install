@@ -21,14 +21,14 @@ ACTION="${1:-all}"
 case "$ACTION" in
   all)
     "$MODULES/../install-terminal.sh" all
-    "$MODULES/install-gnome-config.sh" all
+    #"$MODULES/install-gnome-config.sh" all
     "$MODULES/install-gnome-extensions.sh" all
     # "$MODULES/install-orchis-theme.sh" all
     "$MODULES/install-kitty.sh" all
     "$MODULES/install-vscode.sh" all
     "$MODULES/install-chrome.sh" all
     "$MODULES/install-blackbox-terminal.sh" all
-    "$MODULES/install-papirus.sh" all
+    #"$MODULES/install-papirus.sh" all
 
     ;;
   install)
