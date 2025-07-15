@@ -17,7 +17,6 @@ show_banner() {
 
   echo "$logo" | gum style \
     --foreground 212 \
-    --border double \
     --margin "1 2" \
     --padding "1 4"
 
