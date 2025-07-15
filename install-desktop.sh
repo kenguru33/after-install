@@ -25,7 +25,6 @@ case "$ACTION" in
     "$MODULES/install-orchis-theme.sh" all
     "$MODULES/install-kitty.sh" all
     "$MODULES/install-vscode.sh" all
-    "$MODULES/install-chrome.sh" all
     "$MODULES/install-blackbox-terminal.sh" all
 
     ;;
