@@ -32,7 +32,7 @@ config_gnome() {
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
   # Set control buttons layout
-  gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'
+  gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
 
   echo "✅ GNOME configuration applied."
 }
