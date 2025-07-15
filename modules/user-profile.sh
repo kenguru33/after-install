@@ -8,9 +8,20 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-  # === Prompt for full name ===
+  # === Load existing values if present ===
+  if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$CONFIG_FILE"
+  fi
+
+  # === Prompt for full name (with default) ===
   while true; do
-    USER_NAME=$(gum input --prompt "📝 Full name: " --placeholder "Bernt Anker" --width 50)
+    USER_NAME=$(gum input \
+      --prompt "📝 Full name: " \
+      --placeholder "Bernt Anker" \
+      --value "${name:-}" \
+      --width 50)
+
     if [[ -z "$USER_NAME" ]]; then
       gum style --foreground 1 "❌ Name cannot be empty."
     else
@@ -18,9 +29,14 @@ EOF
     fi
   done
 
-  # === Prompt and validate email ===
+  # === Prompt and validate email (with default) ===
   while true; do
-    USER_EMAIL=$(gum input --prompt "📧 Email address: " --placeholder "bernt@example.com" --width 50)
+    USER_EMAIL=$(gum input \
+      --prompt "📧 Email address: " \
+      --placeholder "bernt@example.com" \
+      --value "${email:-}" \
+      --width 50)
+
     if [[ -z "$USER_EMAIL" ]]; then
       gum style --foreground 1 "❌ Email cannot be empty."
     elif [[ "$USER_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
@@ -30,8 +46,9 @@ EOF
     fi
   done
 
-  # === Prettier summary using printf + gum format ===
-  printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" | gum format --theme=dark
+  # === Show a summary ===
+  printf "# Review your info\n\n✅ Name: **%s**\n✅ Email: **%s**\n" "$USER_NAME" "$USER_EMAIL" \
+    | gum format --theme=dark
 
   # === Confirm and save ===
   gum confirm "💾 Save this information?" || exit 1
