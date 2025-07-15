@@ -57,6 +57,7 @@ ensure_installed() {
 
 ensure_installed curl
 ensure_installed git
+ensure_installed figlet
 
 # === Install gum silently ===
 GUM_VERSION="0.14.3"

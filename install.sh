@@ -8,7 +8,7 @@ MODULES="$SCRIPT_DIR/modules"
 
 clear
 
-# Run the banner
+# === Run the banner ===
 if [[ -x "$MODULES/banner.sh" ]]; then
   "$MODULES/banner.sh"
 fi
@@ -36,11 +36,26 @@ ACTION="${1:-all}"
 
 # === GNOME or terminal path ===
 if command -v gnome-shell &>/dev/null; then
-  gum log --level info "🖥️ GNOME desktop detected."
+  gum log --level info "🖥️ GNOME desktop detected. Including full desktop environment setup."
   "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
   DESKTOP_STATUS=$?
+else
+  gum log --level info "💻 GNOME not detected. Running terminal only installation."
+  "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
+  DESKTOP_STATUS=$?
+fi
 
-  if [[ $DESKTOP_STATUS -eq 0 ]]; then
+# === Final success + optional logout ===
+if [[ $DESKTOP_STATUS -eq 0 ]]; then
+  gum style \
+    --border double \
+    --margin "1" \
+    --padding "1 3" \
+    --foreground 10 \
+    --border-foreground 2 \
+    "✅ System '$ACTION' setup completed successfully!"
+
+  if command -v gnome-shell &>/dev/null; then
     gum style \
       --border normal \
       --margin "1" \
@@ -62,20 +77,8 @@ if command -v gnome-shell &>/dev/null; then
           "⚠️  Unable to log out automatically. Please log out manually."
       fi
     fi
-  else
-    gum log --level error "❌ Desktop installation failed. Not prompting for logout."
-    exit $DESKTOP_STATUS
   fi
 else
-  gum log --level info "💻 GNOME not detected. Running install-terminal.sh..."
-  "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
+  gum log --level error "❌ Setup failed during installation. Not prompting for logout."
+  exit $DESKTOP_STATUS
 fi
-
-# === Final success ===
-gum style \
-  --border double \
-  --margin "1" \
-  --padding "1 3" \
-  --foreground 10 \
-  --border-foreground 2 \
-  "✅ System '$ACTION' setup completed successfully!"
