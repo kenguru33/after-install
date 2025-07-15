@@ -6,12 +6,12 @@ trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
-gum format --theme=dark <<EOF
-# 🛠️ After Install
+clear
 
-A clean and modular bootstrap framework  
-for configuring your terminal and desktop environments.
-EOF
+# Run the banner
+if [[ -x "$MODULES/banner.sh" ]]; then
+  "$MODULES/banner.sh"
+fi
 
 # === Check for required scripts ===
 if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
