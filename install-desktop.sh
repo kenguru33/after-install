@@ -21,25 +21,32 @@ ACTION="${1:-all}"
 case "$ACTION" in
   all)
     "$MODULES/../install-terminal.sh" all
+    "$MODULES/install-gnome-config.sh" all
     "$MODULES/install-gnome-extensions.sh" all
-    "$MODULES/install-orchis-theme.sh" all
+    # "$MODULES/install-orchis-theme.sh" all
     "$MODULES/install-kitty.sh" all
     "$MODULES/install-vscode.sh" all
+    "$MODULES/install-chrome.sh" all
     "$MODULES/install-blackbox-terminal.sh" all
+    "$MODULES/install-papirus.sh" all
 
     ;;
   install)
     "$MODULES/install-gnome-extensions.sh" install
-    "$MODULES/install-orchis-theme.sh" install
+    # "$MODULES/install-orchis-theme.sh" install
+    "$MODULES/install-gnome-config.sh" install
     "$MODULES/install-kitty.sh" install
     "$MODULES/install-vscode.sh" install
     "$MODULES/../install-terminal.sh" install
     "$MODULES/install-chrome.sh" install
     "$MODULES/install-blackbox-terminal.sh" install
+    "$MODULES/install-papirus.sh" install
     ;;
   config)
     "$MODULES/install-gnome-extensions.sh" config
-    "$MODULES/install-orchis-theme.sh" config
+    # "$MODULES/install-orchis-theme.sh" config
+    "$MODULES/install-gnome-config.sh" config
+    "$MODULES/install-papirus.sh" config
     "$MODULES/install-kitty.sh" config
     "$MODULES/install-vscode.sh" config
     "$MODULES/../install-terminal.sh" config
@@ -47,7 +54,9 @@ case "$ACTION" in
     "$MODULES/install-blackbox-terminal.sh" config
     ;;
   clean)
-    "$MODULES/install-orchis-theme.sh" clean
+    # "$MODULES/install-orchis-theme.sh" clean
+    "$MODULES/install-gnome-config.sh" clean
+    "$MODULES/install-papirus.sh" clean
     "$MODULES/install-gnome-extensions.sh" clean
     "$MODULES/install-kitty.sh" clean
     "$MODULES/install-vscode.sh" clean
