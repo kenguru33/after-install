@@ -3,8 +3,10 @@ set -e
 
 MODULE_NAME="gum"
 ACTION="${1:-all}"
-INSTALL_PATH="/usr/local/bin/gum"
+GUM_VERSION="0.14.3"
 GUM_MIN_VERSION="0.11.0"
+DEB_FILE="gum_${GUM_VERSION}_amd64.deb"
+DOWNLOAD_URL="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/${DEB_FILE}"
 
 # === Version utilities ===
 get_installed_version() {
@@ -17,30 +19,21 @@ get_installed_version() {
 }
 
 version_ge() {
-  # returns true if $1 >= $2
   [ "$(printf "%s\n$1\n$2" | sort -V | head -n1)" = "$2" ]
 }
 
 # === Installer ===
 install_gum() {
-  VERSION="0.14.1"
-  ARCH=$(uname -m)
-  ARCH="${ARCH/x86_64/amd64}"
-  TMP_DIR=$(mktemp -d)
+  echo "📦 Downloading gum v$GUM_VERSION..."
+  wget -qO "$DEB_FILE" "$DOWNLOAD_URL"
 
-  echo "📦 Downloading gum v$VERSION..."
-  curl -fsSL "https://github.com/charmbracelet/gum/releases/download/v${VERSION}/gum_${VERSION}_linux_${ARCH}.tar.gz" \
-    | tar -xz -C "$TMP_DIR" &>/dev/null
+  echo "📦 Installing gum via dpkg..."
+  sudo apt-get install -y --allow-downgrades "./$DEB_FILE" &>/dev/null
 
-  echo "📦 Installing gum to $INSTALL_PATH..."
-  sudo mv "$TMP_DIR/gum" "$INSTALL_PATH"
-  sudo chmod +x "$INSTALL_PATH"
-  rm -rf "$TMP_DIR"
-
-  echo "✅ gum v$VERSION installed"
+  rm -f "$DEB_FILE"
+  echo "✅ gum v$GUM_VERSION installed"
 }
 
-# === Install entrypoint ===
 check_and_install_gum() {
   INSTALLED_VERSION=$(get_installed_version)
 
@@ -51,14 +44,13 @@ check_and_install_gum() {
     echo "🔧 gum version $INSTALLED_VERSION is too old. Upgrading..."
     install_gum
   else
-    echo "✅ gum $INSTALLED_VERSION meets requirements"
+    echo "✅ gum $INSTALLED_VERSION is OK"
   fi
 }
 
-# === Cleaner ===
 clean_gum() {
-  echo "🧹 Removing gum from $INSTALL_PATH"
-  sudo rm -f "$INSTALL_PATH"
+  echo "🧹 Removing gum..."
+  sudo apt-get remove -y gum
 }
 
 # === Dispatcher ===
