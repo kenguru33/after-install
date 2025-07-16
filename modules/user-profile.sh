@@ -1,13 +1,26 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Get script directory
+MODULES="$SCRIPT_DIR"  # Set MODULES to current directory
 MODULE_NAME="user-profile"
 CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
 ACTION="${1:-all}"
 
-ask_user_profile() {
+clear
 
+# === Debug: Check path for banner ===
+echo "Looking for banner script at: $MODULES/banner.sh"
+
+# === Run the banner ===
+if [[ -x "$MODULES/banner.sh" ]]; then
+  "$MODULES/banner.sh"
+else
+  gum style --foreground 1 "❌ Unable to find or execute the banner script at $MODULES/banner.sh"
+fi
+
+ask_user_profile() {
   # Load fallback values once
   [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
   fallback_name="${name:-}"
