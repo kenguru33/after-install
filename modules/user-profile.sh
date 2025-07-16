@@ -6,8 +6,6 @@ CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
 ACTION="${1:-all}"
 
-
-
 ask_user_profile() {
 
   # Load fallback values once
@@ -73,6 +71,14 @@ EOF
       break
     else
       gum style --foreground 3 "🔁 Let's try again..."
+      
+      # === Clear screen and load banner.sh again ===
+      clear
+      if [[ -x "$MODULES/banner.sh" ]]; then
+        "$MODULES/banner.sh"
+      else
+        gum style --foreground 1 "❌ Unable to find or execute the banner script at $MODULES/banner.sh"
+      fi
     fi
   done
 }
