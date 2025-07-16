@@ -17,27 +17,45 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-    # Load existing values if present
+    # Load saved values if they exist
     if [[ -f "$CONFIG_FILE" ]]; then
       # shellcheck disable=SC1090
       source "$CONFIG_FILE"
     fi
 
     # === Prompt for full name (with fallback value) ===
-    USER_NAME=$(gum input \
-      --prompt "📝 Full name: " \
-      --placeholder "Bernt Anker" \
-      --value "${name:-}" \
-      --width 50)
+    while true; do
+      USER_NAME=$(gum input \
+        --prompt "📝 Full name: " \
+        --placeholder "Bernt Anker" \
+        --value "${name:-}" \
+        --width 50)
+
+      if [[ -z "$USER_NAME" ]]; then
+        gum style --foreground 1 "❌ Name cannot be empty."
+      else
+        break
+      fi
+    done
 
     # === Prompt for email (with fallback value) ===
-    USER_EMAIL=$(gum input \
-      --prompt "📧 Email address: " \
-      --placeholder "bernt@example.com" \
-      --value "${email:-}" \
-      --width 50)
+    while true; do
+      USER_EMAIL=$(gum input \
+        --prompt "📧 Email address: " \
+        --placeholder "bernt@example.com" \
+        --value "${email:-}" \
+        --width 50)
 
-    # === Escape @ for gum markdown formatting ===
+      if [[ -z "$USER_EMAIL" ]]; then
+        gum style --foreground 1 "❌ Email cannot be empty."
+      elif [[ "$USER_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+        break
+      else
+        gum style --foreground 1 "❌ Invalid email format. Please try again."
+      fi
+    done
+
+    # === Escape @, * and \ for gum markdown display ===
     escaped_name="${USER_NAME//\\/\\\\}"
     escaped_name="${escaped_name//\*/\\*}"
     escaped_email="${USER_EMAIL//@/\\@}"
