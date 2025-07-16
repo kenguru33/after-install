@@ -17,7 +17,7 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-    # Load existing values if present
+    # Load existing values from config if present
     if [[ -f "$CONFIG_FILE" ]]; then
       # shellcheck disable=SC1090
       source "$CONFIG_FILE"
@@ -29,23 +29,11 @@ EOF
       --placeholder "Bernt Anker" \
       --value "${name:-}")
 
-    # Strip unwanted characters
-    USER_NAME="${USER_NAME//[$'\r\n']/}"
-
-    # Debug
-    echo "DEBUG: USER_NAME='$USER_NAME'" >&2
-
     # === Prompt for email ===
     USER_EMAIL=$(gum input \
       --prompt "📧 Email address: " \
       --placeholder "bernt@example.com" \
       --value "${email:-}")
-
-    # Strip unwanted characters (e.g., \r and \n)
-    USER_EMAIL="${USER_EMAIL//[$'\r\n']/}"
-
-    # Debug
-    echo "DEBUG: USER_EMAIL='$USER_EMAIL'" >&2
 
     # === Show review using safer method ===
     gum format --theme=dark <<<"# Review your info
