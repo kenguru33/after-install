@@ -117,7 +117,7 @@ config_extensions() {
 
   echo "🧩 Setting Blur My Shell [panel] config via dconf..."
   if command -v dconf &>/dev/null; then
-    dconf write /org/gnome/shell/extensions/blur-my-shell/panel/pipeline "'pipeline_default_rounded'" || echo "⚠️ Failed to set pipeline."
+    #dconf write /org/gnome/shell/extensions/blur-my-shell/panel/pipeline "'pipeline_default_rounded'" || echo "⚠️ Failed to set pipeline."
     dconf write /org/gnome/shell/extensions/blur-my-shell/panel/override-background-dynamically false || echo "⚠️ Failed to set override-background-dynamically."
 
     echo "🔍 Verifying panel config:"
