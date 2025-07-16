@@ -22,17 +22,14 @@ EOF
       source "$CONFIG_FILE"
     fi
 
-    # === Prompt for email using `read` for better handling of special characters ===
+    # === Prompt for email using `read` ===
     gum style --foreground 2 "Please enter your email address."
     read -r USER_EMAIL
 
-    # Remove unwanted carriage returns or newlines
-    USER_EMAIL="${USER_EMAIL//[$'\r\n']/}"
+    # Debug: Check if the email is captured correctly
+    echo "DEBUG: Captured USER_EMAIL='$USER_EMAIL'" >&2
 
-    # Debug: show what's being captured
-    echo "DEBUG: USER_EMAIL='$USER_EMAIL'" >&2
-
-    # === Show review of email ===
+    # === Show review with direct printing of email ===
     gum format --theme=dark <<<"# Review your info
 
 ✅ Email: **$USER_EMAIL**"
