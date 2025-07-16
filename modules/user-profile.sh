@@ -9,25 +9,18 @@ ACTION="${1:-all}"
 ask_user_profile() {
   while true; do
     gum format --theme=dark <<EOF
-# 👤 Let's personalize your setup
+# 📧 Let's set up your email address
 
-This information will be used for:
+This will be used for:
 
 - ✅ Git configuration  
-- 🖼️  Gravatar profile image
 EOF
 
-    # Load existing values from config if present
+    # Load existing email value if present
     if [[ -f "$CONFIG_FILE" ]]; then
       # shellcheck disable=SC1090
       source "$CONFIG_FILE"
     fi
-
-    # === Prompt for full name ===
-    USER_NAME=$(gum input \
-      --prompt "📝 Full name: " \
-      --placeholder "Bernt Anker" \
-      --value "${name:-}")
 
     # === Prompt for email ===
     USER_EMAIL=$(gum input \
@@ -35,20 +28,18 @@ EOF
       --placeholder "bernt@example.com" \
       --value "${email:-}")
 
-    # === Show review using safer method ===
+    # === Show review of email ===
     gum format --theme=dark <<<"# Review your info
 
-✅ Name: **$USER_NAME**
 ✅ Email: **$USER_EMAIL**"
 
-    # === Confirm and save ===
-    if gum confirm "💾 Save this information?"; then
+    # === Confirm and save email ===
+    if gum confirm "💾 Save this email?"; then
       mkdir -p "$CONFIG_DIR"
       cat > "$CONFIG_FILE" <<EOF
-name="$USER_NAME"
 email="$USER_EMAIL"
 EOF
-      gum style --foreground 2 "✅ Saved user info to $CONFIG_FILE"
+      gum style --foreground 2 "✅ Saved email to $CONFIG_FILE"
       break
     else
       gum style --foreground 3 "🔁 Let's try again..."
