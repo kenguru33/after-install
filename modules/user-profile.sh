@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-MODULES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_NAME="user-profile"
 CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
@@ -79,12 +78,6 @@ EOF
 }
 
 config_user_profile() {
-  clear
-
-  # === Run the banner ===
-  if [[ -x "$MODULES/banner.sh" ]]; then
-    "$MODULES/banner.sh"
-  fi
   ask_user_profile
 }
 
