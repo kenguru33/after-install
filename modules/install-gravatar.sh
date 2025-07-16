@@ -5,6 +5,7 @@ MODULE_NAME="set-user-avatar"
 FACE_IMAGE="$HOME/.face"
 AFTER_INSTALL_CONFIG="$HOME/.config/after-install/userinfo.config"
 MODULE_EMAIL_FILE="$HOME/.config/$MODULE_NAME/email"
+GDM_ICON_DIR="/var/lib/AccountsService/icons"
 DEFAULT_SIZE=256
 
 ACTION="${1:-all}"
@@ -61,12 +62,25 @@ config() {
 
   echo "🖼️ Saved avatar to $FACE_IMAGE"
 
+  # Update GNOME user avatar using gsettings
   if command -v gsettings &>/dev/null; then
     echo "🔧 Setting GNOME account picture via gsettings..."
     gsettings set org.gnome.desktop.account-service account-picture "$FACE_IMAGE" 2>/dev/null || true
   fi
 
-  echo "✅ GNOME avatar updated."
+  # Ensure GDM uses the same image
+  sudo mkdir -p "$GDM_ICON_DIR"
+  sudo cp "$FACE_IMAGE" "$GDM_ICON_DIR/$(whoami)"
+
+  # Update AccountsService database to ensure the avatar is recognized by GDM
+  ACCOUNTS_USER_CONFIG="/var/lib/AccountsService/users/$(whoami)"
+  sudo mkdir -p "$(dirname "$ACCOUNTS_USER_CONFIG")"
+  sudo tee "$ACCOUNTS_USER_CONFIG" > /dev/null <<EOF
+[User]
+Icon=$GDM_ICON_DIR/$(whoami)
+EOF
+
+  echo "✅ GNOME and GDM avatar updated."
 }
 
 clean() {
