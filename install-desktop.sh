@@ -26,10 +26,9 @@ run_with_spinner() {
 
 case "$ACTION" in
   all)
-    run_with_spinner "Installing terminal environment..." "$MODULES/../install-terminal.sh all"
+    $MODULES/../install-terminal.sh all
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh all"
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh all"
-    # run_with_spinner "Installing Orchis theme..." "$MODULES/install-orchis-theme.sh all"
     run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh all"
     run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh all"
     run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh all"
@@ -39,7 +38,6 @@ case "$ACTION" in
     ;;
   install)
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh install"
-    # run_with_spinner "Installing Orchis theme..." "$MODULES/install-orchis-theme.sh install"
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh install"
     run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh install"
     run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh install"
@@ -50,7 +48,6 @@ case "$ACTION" in
     ;;
   config)
     run_with_spinner "Configuring GNOME extensions..." "$MODULES/install-gnome-extensions.sh config"
-    # run_with_spinner "Configuring Orchis theme..." "$MODULES/install-orchis-theme.sh config"
     run_with_spinner "Configuring GNOME config..." "$MODULES/install-gnome-config.sh config"
     run_with_spinner "Configuring Papirus icon theme..." "$MODULES/install-papirus.sh config"
     run_with_spinner "Configuring Kitty terminal..." "$MODULES/install-kitty.sh config"
@@ -60,7 +57,6 @@ case "$ACTION" in
     run_with_spinner "Configuring BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh config"
     ;;
   clean)
-    # run_with_spinner "Cleaning Orchis theme..." "$MODULES/install-orchis-theme.sh clean"
     run_with_spinner "Cleaning GNOME config..." "$MODULES/install-gnome-config.sh clean"
     run_with_spinner "Cleaning Papirus icon theme..." "$MODULES/install-papirus.sh clean"
     run_with_spinner "Cleaning GNOME extensions..." "$MODULES/install-gnome-extensions.sh clean"
