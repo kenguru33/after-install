@@ -15,6 +15,7 @@ ask_user_profile() {
 
   # === Run the banner ===
   if [[ -x "$MODULES/banner.sh" ]]; then
+    echo "$MODULES"
     "$MODULES/banner.sh"
   fi
 
