@@ -8,7 +8,7 @@
 > - Your user must have **sudo permissions**.  
 > - **Do not** run this installer as the root user.  
 
-### Using `curl` (recommended)
+### Using `curl`
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh)"
