@@ -55,10 +55,11 @@ EOF
       fi
     done
 
-    # === Escape for gum markdown display only ===
+    # === Escape only markdown-sensitive characters (not @) ===
     display_name="${USER_NAME//\\/\\\\}"
     display_name="${display_name//\*/\\*}"
-    display_email="${USER_EMAIL//@/\\@}"
+    display_email="${USER_EMAIL//\\/\\\\}"
+    display_email="${display_email//\*/\\*}"
 
     # === Show review ===
     gum format --theme=dark <<<"# Review your info
