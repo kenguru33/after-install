@@ -16,7 +16,7 @@ wget https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh
 
 ## Features
 
-- Shell & Theme
+**Shell and Theme**
 - ZSH with Oh-My-Zsh
 - Starship prompt
 - Catppuccin color scheme
@@ -28,7 +28,8 @@ wget https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh
 **GNOME Tweaks**
 - Tiling Shell
 - Blur My Shell
-- Gravatar-based user profile
+- Papirus Icons
+- Gravatar-based user profile image
 - Wallpaper & UI settings
 - Extra package sources
 
