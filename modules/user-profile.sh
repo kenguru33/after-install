@@ -55,17 +55,16 @@ EOF
       fi
     done
 
-    # === Escape only for Markdown display ===
-display_name="${USER_NAME//\\/\\\\}"
-display_name="${display_name//\*/\\*}"
-display_email="${USER_EMAIL//\\/\\\\}"
-display_email="${display_email//\*/\\*}"
+    # === Escape for gum markdown display only ===
+    display_name="${USER_NAME//\\/\\\\}"
+    display_name="${display_name//\*/\\*}"
+    display_email="${USER_EMAIL//@/\\@}"
 
-gum format --theme=dark <<<"# Review your info
+    # === Show review ===
+    gum format --theme=dark <<<"# Review your info
 
 ✅ Name: **$display_name**  
 ✅ Email: **$display_email**"
-
 
     if gum confirm "💾 Save this information?"; then
       mkdir -p "$CONFIG_DIR"
