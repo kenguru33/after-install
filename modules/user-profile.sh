@@ -7,6 +7,11 @@ CONFIG_FILE="$CONFIG_DIR/userinfo.config"
 ACTION="${1:-all}"
 
 ask_user_profile() {
+  # Load fallback values once
+  [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+  fallback_name="${name:-}"
+  fallback_email="${email:-}"
+
   while true; do
     gum format --theme=dark <<EOF
 # 👤 Let's personalize your setup
@@ -17,18 +22,12 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-    # Load saved values if they exist
-    if [[ -f "$CONFIG_FILE" ]]; then
-      # shellcheck disable=SC1090
-      source "$CONFIG_FILE"
-    fi
-
-    # === Prompt for full name (with fallback value) ===
+    # === Prompt for full name ===
     while true; do
       USER_NAME=$(gum input \
         --prompt "📝 Full name: " \
         --placeholder "Bernt Anker" \
-        --value "${name:-}" \
+        --value "$fallback_name" \
         --width 50)
 
       if [[ -z "$USER_NAME" ]]; then
@@ -38,12 +37,12 @@ EOF
       fi
     done
 
-    # === Prompt for email (with fallback value) ===
+    # === Prompt for email ===
     while true; do
       USER_EMAIL=$(gum input \
         --prompt "📧 Email address: " \
         --placeholder "bernt@example.com" \
-        --value "${email:-}" \
+        --value "$fallback_email" \
         --width 50)
 
       if [[ -z "$USER_EMAIL" ]]; then
@@ -55,17 +54,11 @@ EOF
       fi
     done
 
-    # === Escape only markdown-sensitive characters (not @) ===
-    display_name="${USER_NAME//\\/\\\\}"
-    display_name="${display_name//\*/\\*}"
-    display_email="${USER_EMAIL//\\/\\\\}"
-    display_email="${display_email//\*/\\*}"
-
-    # === Show review ===
+    # === Show review (no markdown formatting) ===
     gum format --theme=dark <<<"# Review your info
 
-✅ Name: **$display_name**  
-✅ Email: **$display_email**"
+✅ Name: $USER_NAME  
+✅ Email: $USER_EMAIL"
 
     if gum confirm "💾 Save this information?"; then
       mkdir -p "$CONFIG_DIR"
