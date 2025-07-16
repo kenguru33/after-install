@@ -22,13 +22,11 @@ EOF
       source "$CONFIG_FILE"
     fi
 
-    # === Prompt for email ===
-    USER_EMAIL=$(gum input \
-      --prompt "📧 Email address: " \
-      --placeholder "bernt@example.com" \
-      --value "${email:-}")
+    # === Prompt for email using `read` for better handling of special characters ===
+    gum style --foreground 2 "Please enter your email address."
+    read -r USER_EMAIL
 
-    # Strip carriage returns or newlines just in case
+    # Remove unwanted carriage returns or newlines
     USER_EMAIL="${USER_EMAIL//[$'\r\n']/}"
 
     # Debug: show what's being captured
