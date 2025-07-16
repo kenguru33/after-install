@@ -9,38 +9,52 @@ ACTION="${1:-all}"
 ask_user_profile() {
   while true; do
     gum format --theme=dark <<EOF
-# 📧 Let's set up your email address
+# 👤 Let's personalize your setup
 
-This will be used for:
+This information will be used for:
 
 - ✅ Git configuration  
+- 🖼️  Gravatar profile image
 EOF
 
-    # Load existing email value if present
+    # Load existing values if present
     if [[ -f "$CONFIG_FILE" ]]; then
       # shellcheck disable=SC1090
       source "$CONFIG_FILE"
     fi
 
-    # === Prompt for email using `read` ===
-    gum style --foreground 2 "Please enter your email address."
-    read -r USER_EMAIL
+    # === Prompt for full name (with fallback value) ===
+    USER_NAME=$(gum input \
+      --prompt "📝 Full name: " \
+      --placeholder "Bernt Anker" \
+      --value "${name:-}" \
+      --width 50)
 
-    # Debug: Check if the email is captured correctly
-    echo "DEBUG: Captured USER_EMAIL='$USER_EMAIL'" >&2
+    # === Prompt for email (with fallback value) ===
+    USER_EMAIL=$(gum input \
+      --prompt "📧 Email address: " \
+      --placeholder "bernt@example.com" \
+      --value "${email:-}" \
+      --width 50)
 
-    # === Show review with direct printing of email ===
+    # === Escape @ for gum markdown formatting ===
+    escaped_name="${USER_NAME//\\/\\\\}"
+    escaped_name="${escaped_name//\*/\\*}"
+    escaped_email="${USER_EMAIL//@/\\@}"
+
+    # === Show review ===
     gum format --theme=dark <<<"# Review your info
 
-✅ Email: **$USER_EMAIL**"
+✅ Name: **$escaped_name**  
+✅ Email: **$escaped_email**"
 
-    # === Confirm and save email ===
-    if gum confirm "💾 Save this email?"; then
+    if gum confirm "💾 Save this information?"; then
       mkdir -p "$CONFIG_DIR"
       cat > "$CONFIG_FILE" <<EOF
+name="$USER_NAME"
 email="$USER_EMAIL"
 EOF
-      gum style --foreground 2 "✅ Saved email to $CONFIG_FILE"
+      gum style --foreground 2 "✅ Saved user info to $CONFIG_FILE"
       break
     else
       gum style --foreground 3 "🔁 Let's try again..."
@@ -48,81 +62,25 @@ EOF
   done
 }
 
-# === Dispatcher ===
-case "$ACTION" in
-  install|config|all)
-    ask_user_profile
-    ;;
-  clean)
-    rm -f "$CONFIG_FILE"
-    gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
-    ;;
-  *)
-    echo "Usage: $0 [install|config|clean|all]"
-    exit 1#!/bin/bash
-set -e
+config_user_profile() {
+  ask_user_profile
+}
 
-MODULE_NAME="user-profile"
-CONFIG_DIR="$HOME/.config/after-install"
-CONFIG_FILE="$CONFIG_DIR/userinfo.config"
-ACTION="${1:-all}"
-
-ask_user_profile() {
-  while true; do
-    gum format --theme=dark <<EOF
-# 📧 Let's set up your email address
-
-This will be used for:
-
-- ✅ Git configuration  
-EOF
-
-    # Load existing email value if present
-    if [[ -f "$CONFIG_FILE" ]]; then
-      # shellcheck disable=SC1090
-      source "$CONFIG_FILE"
-    fi
-
-    # === Prompt for email using `read` (directly) ===
-    gum style --foreground 2 "Please enter your email address."
-    read -r USER_EMAIL
-
-    # Debug: Check if the email is captured correctly
-    echo "DEBUG: Captured USER_EMAIL='$USER_EMAIL'" >&2
-
-    # === Show review with direct printing of email ===
-    gum format --theme=dark <<<"# Review your info
-
-✅ Email: **$USER_EMAIL**"
-
-    # === Confirm and save email ===
-    if gum confirm "💾 Save this email?"; then
-      mkdir -p "$CONFIG_DIR"
-      cat > "$CONFIG_FILE" <<EOF
-email="$USER_EMAIL"
-EOF
-      gum style --foreground 2 "✅ Saved email to $CONFIG_FILE"
-      break
-    else
-      gum style --foreground 3 "🔁 Let's try again..."
-    fi
-  done
+clean_user_profile() {
+  rm -f "$CONFIG_FILE"
+  gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
 }
 
 # === Dispatcher ===
 case "$ACTION" in
   install|config|all)
-    ask_user_profile
+    config_user_profile
     ;;
   clean)
-    rm -f "$CONFIG_FILE"
-    gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
+    clean_user_profile
     ;;
   *)
     echo "Usage: $0 [install|config|clean|all]"
     exit 1
-    ;;
-esac
-
     ;;
 esac
