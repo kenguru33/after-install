@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 
-MODULES="$SCRIPT_DIR/modules"
+MODULES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_NAME="user-profile"
 CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
