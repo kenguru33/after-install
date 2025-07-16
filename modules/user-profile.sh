@@ -11,14 +11,6 @@ ACTION="${1:-all}"
 
 ask_user_profile() {
 
-  clear
-
-  # === Run the banner ===
-  if [[ -x "$MODULES/banner.sh" ]]; then
-    echo "$MODULES"
-    "$MODULES/banner.sh"
-  fi
-
   # Load fallback values once
   [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
   fallback_name="${name:-}"
@@ -36,6 +28,14 @@ EOF
 
     # === Prompt for full name ===
     while true; do
+    
+      clear
+
+      # === Run the banner ===
+      if [[ -x "$MODULES/banner.sh" ]]; then
+        "$MODULES/banner.sh"
+      fi
+
       USER_NAME=$(gum input \
         --prompt "📝 Full name: " \
         --placeholder "Bernt Anker" \
