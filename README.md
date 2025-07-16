@@ -1,14 +1,14 @@
 # 🚀 After Install
 
-**After Install** is an opinionated setup tool for **Debian Trixie**, built to streamline and personalize both terminal and GNOME desktop environments. It applies smart defaults, installs essential tools, and delivers a clean, consistent system—ready to use from the start.
+**After Install** is an opinionated post-installation tool for **Debian Trixie**, designed to streamline and personalize your Linux setup—both in the terminal and on the GNOME desktop. It applies sensible defaults, installs essential tools, and delivers a clean, consistent environment that’s ready to use from the start.
 
 ## 📥 Installation
 
-> ⚠️ **Important:**  
-> - Your user must have **sudo permissions**.  
-> - **Do not** run this installer as the root user.  
+> ⚠️ **Requirements:**  
+> - Must be run by a user with **sudo** privileges  
+> - **Do not** run as the root user  
 
-### Using `curl`
+### Using `curl` (recommended)
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh)"
@@ -24,30 +24,30 @@ wget https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh
 
 ### 🖥️ Shell & Theme
 
-- ⚙️ ZSH with Oh-My-Zsh  
-- 🌟 Starship prompt  
-- 🎨 Catppuccin color scheme  
+- ⚙️ ZSH powered by Oh-My-Zsh  
+- 🌟 Minimal, fast Starship prompt  
+- 🎨 Beautiful Catppuccin color scheme  
 
 ### 🧰 Terminal Tools
 
-- 🐙 Git  
-- 🔧 [More coming soon...]
+- 🐙 Git and related essentials  
+- 🔧 Additional tools (coming soon)  
 
-### 🧩 GNOME Tweaks
+### 🧩 GNOME Extensions & Configuration
 
-- 🪟 Tiling Shell extension  
-- 💫 Blur My Shell extension  
+- 🪟 Tiling Shell for window management  
+- 💫 Blur My Shell for visual polish  
 - 🎨 Papirus icon theme  
-- 👤 Sets user profile image from Gravatar  
-- 🖼️ Wallpaper & GNOME UI customization  
-- 📦 Adds extra APT package sources  
+- 👤 Gravatar-based user profile image  
+- 🖼️ Wallpaper and UI customization  
+- 📦 Adds trusted third-party APT sources  
 
 ### 📦 Applications
 
-- 🐱 [Kitty Terminal](https://sw.kovidgoyal.net/kitty/)  
-- 🧱 [BlackBox Terminal](https://apps.gnome.org/BlackBox/)  
-- 🧑‍💻 [Visual Studio Code](https://code.visualstudio.com/)  
+- 🐱 [Kitty Terminal](https://sw.kovidgoyal.net/kitty/) – fast, GPU-based terminal  
+- 🧱 [BlackBox Terminal](https://apps.gnome.org/BlackBox/) – sleek GTK-based terminal  
+- 🧑‍💻 [Visual Studio Code](https://code.visualstudio.com/) – versatile code editor  
 
 ---
 
-> 🛠 Built to make Debian Trixie feel like home—fast, clean, and beautiful.
+> 🛠 **After Install** helps you go from fresh Debian to a fully personalized system—fast, clean, and ready for work.
