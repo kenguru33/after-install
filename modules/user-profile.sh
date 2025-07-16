@@ -28,6 +28,12 @@ EOF
       --placeholder "bernt@example.com" \
       --value "${email:-}")
 
+    # Strip carriage returns or newlines just in case
+    USER_EMAIL="${USER_EMAIL//[$'\r\n']/}"
+
+    # Debug: show what's being captured
+    echo "DEBUG: USER_EMAIL='$USER_EMAIL'" >&2
+
     # === Show review of email ===
     gum format --theme=dark <<<"# Review your info
 
