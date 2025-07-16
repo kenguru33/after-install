@@ -55,16 +55,16 @@ EOF
       fi
     done
 
-    # === Escape @, * and \ for gum markdown display ===
-    escaped_name="${USER_NAME//\\/\\\\}"
-    escaped_name="${escaped_name//\*/\\*}"
-    escaped_email="${USER_EMAIL//@/\\@}"
+    # === Escape for gum markdown display only ===
+    display_name="${USER_NAME//\\/\\\\}"
+    display_name="${display_name//\*/\\*}"
+    display_email="${USER_EMAIL//@/\\@}"
 
     # === Show review ===
     gum format --theme=dark <<<"# Review your info
 
-✅ Name: **$escaped_name**  
-✅ Email: **$escaped_email**"
+✅ Name: **$display_name**  
+✅ Email: **$display_email**"
 
     if gum confirm "💾 Save this information?"; then
       mkdir -p "$CONFIG_DIR"
