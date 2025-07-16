@@ -35,6 +35,7 @@ case "$ACTION" in
     run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh all"
     run_with_spinner "Installing BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh all"
     run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus.sh all"
+    run_with_spinner "Installing Profile image from gravatar..." "$MODULES/install-gravatar.sh all"
     ;;
   install)
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh install"
