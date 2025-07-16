@@ -29,8 +29,8 @@ EOF
       --placeholder "Bernt Anker" \
       --value "${name:-}")
 
-    # Strip CR/LF just in case
-    USER_NAME=$(echo "$USER_NAME" | tr -d '\r\n')
+    # Strip unwanted characters
+    USER_NAME="${USER_NAME//[$'\r\n']/}"
 
     # Debug
     echo "DEBUG: USER_NAME='$USER_NAME'" >&2
@@ -41,7 +41,10 @@ EOF
       --placeholder "bernt@example.com" \
       --value "${email:-}")
 
-    USER_EMAIL=$(echo "$USER_EMAIL" | tr -d '\r\n')
+    # Strip unwanted characters (e.g., \r and \n)
+    USER_EMAIL="${USER_EMAIL//[$'\r\n']/}"
+
+    # Debug
     echo "DEBUG: USER_EMAIL='$USER_EMAIL'" >&2
 
     # === Show review using safer method ===
