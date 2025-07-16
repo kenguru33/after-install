@@ -6,6 +6,13 @@ CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
 ACTION="${1:-all}"
 
+clear
+
+# === Run the banner ===
+if [[ -x "$MODULES/banner.sh" ]]; then
+  "$MODULES/banner.sh"
+fi
+
 ask_user_profile() {
   # Load fallback values once
   [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
