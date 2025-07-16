@@ -1,43 +1,53 @@
-# After Install
+# 🚀 After Install
 
-An opinionated setup tool for Debian Trixie, tailored for both terminal and GNOME desktop users. After Install applies smart defaults, configures essential tools, and delivers a clean, consistent system—ready to use from the start.
+**After Install** is an opinionated setup tool for **Debian Trixie**, built to streamline and personalize both terminal and GNOME desktop environments. It applies smart defaults, installs essential tools, and delivers a clean, consistent system—ready to use from the start.
 
-## Installation
+## 📥 Installation
 
-Using curl
+> ⚠️ **Important:**  
+> - Your user must have **sudo permissions**.  
+> - **Do not** run this installer as the root user.  
+
+### Using `curl` (recommended)
+
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh)"
 ```
 
-or with wget:
-```
+### Or, if you prefer `wget`
+
+```bash
 wget https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
 ```
 
-## Features
+## ✨ Features
 
-**Shell and Theme**
-- ZSH with Oh-My-Zsh
-- Starship prompt
-- Catppuccin color scheme
+### 🖥️ Shell & Theme
 
-**Terminal Tools**
-- Git
-- [More coming…]
+- ⚙️ ZSH with Oh-My-Zsh  
+- 🌟 Starship prompt  
+- 🎨 Catppuccin color scheme  
 
-**GNOME Tweaks**
-- Tiling Shell
-- Blur My Shell
-- Papirus Icons
-- Gravatar-based user profile image
-- Wallpaper & UI settings
-- Extra package sources
+### 🧰 Terminal Tools
 
-**Applications**
-- Kitty Terminal
-- BlackBox Terminal
-- Visual Studio Code
+- 🐙 Git  
+- 🔧 [More coming soon...]
 
+### 🧩 GNOME Tweaks
 
+- 🪟 Tiling Shell extension  
+- 💫 Blur My Shell extension  
+- 🎨 Papirus icon theme  
+- 👤 Sets user profile image from Gravatar  
+- 🖼️ Wallpaper & GNOME UI customization  
+- 📦 Adds extra APT package sources  
 
+### 📦 Applications
 
+- 🐱 [Kitty Terminal](https://sw.kovidgoyal.net/kitty/)  
+- 🧱 [BlackBox Terminal](https://apps.gnome.org/BlackBox/)  
+- 🧑‍💻 [Visual Studio Code](https://code.visualstudio.com/)  
+
+---
+
+> 🛠 Built to make Debian Trixie feel like home—fast, clean, and beautiful.
