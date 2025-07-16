@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+MODULES="$SCRIPT_DIR/modules"
 MODULE_NAME="user-profile"
 CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
