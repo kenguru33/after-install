@@ -45,8 +45,7 @@ main() {
   for name in "${selected[@]}"; do
     run_installer_for "$name"
   done
-
-  echo "✅ Done."
+  
 }
 
 [[ "$ACTION" == "all" ]] && main
