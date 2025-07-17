@@ -52,51 +52,24 @@ fi
 # === Ask user for name/email ===
 "$MODULES/user-profile.sh" all
 
+clear
+
 # === GNOME or terminal path ===
 if command -v gnome-shell &>/dev/null; then
-  gum log --level info "🖥️ GNOME desktop detected. Including full desktop environment setup."
+  gum log --level info "GNOME desktop detected. Including full desktop environment setup."
+  
   "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
   DESKTOP_STATUS=$?
 else
-  gum log --level info "💻 GNOME not detected. Running terminal only installation."
+  gum log --level info "**GNOME** not detected. Running terminal only installation."
   "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
   DESKTOP_STATUS=$?
 fi
 
-# === Final success + optional logout ===
-if [[ $DESKTOP_STATUS -eq 0 ]]; then
-  gum style \
-    --border double \
-    --margin "1" \
-    --padding "1 3" \
-    --foreground 10 \
-    --border-foreground 2 \
-    "✅ System \"$ACTION\" setup completed successfully!"
-
-  if command -v gnome-shell &>/dev/null; then
-    gum style \
-      --border normal \
-      --margin "1" \
-      --padding "1 3" \
-      --foreground 208 \
-      --border-foreground 166 \
-      "🔄 To apply all GNOME desktop changes, you should log out and back in."
-
-    if gum confirm "🚪 Do you want to log out now?"; then
-      if command -v gnome-session-quit &>/dev/null; then
-        gnome-session-quit --logout --no-prompt
-      else
-        gum style \
-          --border normal \
-          --margin "1" \
-          --padding "1 3" \
-          --foreground 1 \
-          --border-foreground 9 \
-          "⚠️  Unable to log out automatically. Please log out manually."
-      fi
-    fi
-  fi
-else
-  gum log --level error "❌ Setup failed during installation. Not prompting for logout."
+if [[ $DESKTOP_STATUS -eq 0 && $(command -v gnome-shell) ]]; then
+  echo "🔁 Please log out and back in to apply all GNOME desktop changes."
+elif [[ $DESKTOP_STATUS -ne 0 ]]; then
+  gum log --level error "❌ Setup failed during installation."
   exit $DESKTOP_STATUS
 fi
+

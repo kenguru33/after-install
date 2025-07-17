@@ -29,20 +29,21 @@ case "$ACTION" in
     $MODULES/../install-terminal.sh all
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh all"
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh all"
-    run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh all"
-    run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh all"
-    run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh all"
+    #run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh all"
+    #run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh all"
+    #run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh all"
     run_with_spinner "Installing BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh all"
     run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus.sh all"
     run_with_spinner "Installing Profile image from gravatar..." "$MODULES/install-gravatar.sh all"
+    $MODULES/../install-desktop-optional.sh all
     ;;
   install)
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh install"
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh install"
-    run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh install"
-    run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh install"
+    #run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh install"
+    #run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh install"
     run_with_spinner "Installing terminal environment..." "$MODULES/../install-terminal.sh install"
-    run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh install"
+    #run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh install"
     run_with_spinner "Installing BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh install"
     run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus.sh install"
     ;;

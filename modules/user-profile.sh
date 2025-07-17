@@ -10,16 +10,6 @@ ACTION="${1:-all}"
 
 clear
 
-# === Debug: Check path for banner ===
-echo "Looking for banner script at: $MODULES/banner.sh"
-
-# === Run the banner ===
-if [[ -x "$MODULES/banner.sh" ]]; then
-  "$MODULES/banner.sh"
-else
-  gum style --foreground 1 "❌ Unable to find or execute the banner script at $MODULES/banner.sh"
-fi
-
 ask_user_profile() {
   # Load fallback values once
   [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
