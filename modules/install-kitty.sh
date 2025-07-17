@@ -48,6 +48,7 @@ repaint_delay        10
 input_delay          2
 sync_to_monitor      yes
 
+
 # Titlebar and tab titles show path only (with ~ for home)
 window_title_format "{shrink_path(cwd)}"
 tab_title_template "{shrink_path(cwd)}"
