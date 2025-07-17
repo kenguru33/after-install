@@ -66,9 +66,12 @@ else
   DESKTOP_STATUS=$?
 fi
 
-if [[ $DESKTOP_STATUS -eq 0 && $(command -v gnome-shell) ]]; then
-  echo "🔁 Please log out and back in to apply all GNOME desktop changes."
-elif [[ $DESKTOP_STATUS -ne 0 ]]; then
+if [[ $DESKTOP_STATUS -eq 0 ]]; then
+  gum log --level success "✅ Installation completed successfully."
+  if command -v gnome-shell &>/dev/null; then
+    gum log --level info "🔁 Please log out and back in to apply all GNOME desktop changes."
+  fi
+else
   gum log --level error "❌ Setup failed during installation."
   exit $DESKTOP_STATUS
 fi
