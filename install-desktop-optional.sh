@@ -51,7 +51,6 @@ main() {
     run_installer_for "$name"
   done
 
-  echo "✅ Done."
 }
 
 [[ "$ACTION" == "all" ]] && main
