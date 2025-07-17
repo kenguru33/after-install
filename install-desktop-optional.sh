@@ -11,7 +11,7 @@ declare -A MODULES=(
   [kitty]="command -v kitty"
   [lens]="command -v lens"
   [jetbrains-toolbox]="command -v jetbrains-toolbox"
-  [firefox-pwa] ="command -v firefox"
+  [firefox-pwa]="command -v firefox"
 )
 
 MODULE_DIR="./modules"
