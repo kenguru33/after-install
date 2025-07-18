@@ -4,10 +4,23 @@ set -e
 MODULE_NAME="papirus-icon-theme"
 ACTION="${1:-all}"
 
+# === Define dependencies ===
+DEPS_DEBIAN=("papirus-icon-theme")
+DEPS_FEDORA=("papirus-icon-theme")
+
 install_papirus() {
-  echo "📦 Installing Papirus icon theme from Debian repo..."
-  sudo apt update
-  sudo apt install -y papirus-icon-theme
+  echo "📦 Installing Papirus icon theme..."
+
+  if command -v apt &>/dev/null; then
+    sudo apt update
+    sudo apt install -y "${DEPS_DEBIAN[@]}"
+  elif command -v dnf &>/dev/null; then
+    sudo dnf install -y "${DEPS_FEDORA[@]}"
+  else
+    echo "❌ Unsupported distribution."
+    exit 1
+  fi
+
   echo "✅ Papirus icon theme installed."
 }
 
@@ -19,7 +32,16 @@ config_papirus() {
 
 clean_papirus() {
   echo "🧹 Removing Papirus icon theme..."
-  sudo apt remove --purge -y papirus-icon-theme
+
+  if command -v apt &>/dev/null; then
+    sudo apt remove --purge -y "${DEPS_DEBIAN[@]}"
+  elif command -v dnf &>/dev/null; then
+    sudo dnf remove -y "${DEPS_FEDORA[@]}"
+  else
+    echo "❌ Unsupported distribution."
+    exit 1
+  fi
+
   echo "✅ Papirus icon theme removed."
 }
 
