@@ -1,17 +1,55 @@
 #!/bin/bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Get script directory
-MODULES="$SCRIPT_DIR"  # Set MODULES to current directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODULES="$SCRIPT_DIR"
 MODULE_NAME="user-profile"
 CONFIG_DIR="$HOME/.config/after-install"
 CONFIG_FILE="$CONFIG_DIR/userinfo.config"
 ACTION="${1:-all}"
 
-clear
+# === OS Detection ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+else
+  echo "❌ Cannot detect OS. /etc/os-release missing."
+  exit 1
+fi
+
+# === Dependencies ===
+DEPS=("gum")
+
+install_dependencies() {
+  echo "🔧 Checking required dependencies..."
+
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt update
+    for dep in "${DEPS[@]}"; do
+      if ! command -v "$dep" &>/dev/null; then
+        echo "📦 Installing $dep..."
+        sudo apt install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+
+  elif [[ "$ID" == "fedora" ]]; then
+    for dep in "${DEPS[@]}"; do
+      if ! command -v "$dep" &>/dev/null; then
+        echo "📦 Installing $dep..."
+        sudo dnf install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+
+  else
+    echo "❌ Unsupported OS: $ID"
+    exit 1
+  fi
+}
 
 ask_user_profile() {
-  # Load fallback values once
   [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
   fallback_name="${name:-}"
   fallback_email="${email:-}"
@@ -26,7 +64,6 @@ This information will be used for:
 - 🖼️  Gravatar profile image
 EOF
 
-    # === Prompt for full name ===
     while true; do
       USER_NAME=$(gum input \
         --prompt "📝 Full name: " \
@@ -41,7 +78,6 @@ EOF
       fi
     done
 
-    # === Prompt for email ===
     while true; do
       USER_EMAIL=$(gum input \
         --prompt "📧 Email address: " \
@@ -58,7 +94,6 @@ EOF
       fi
     done
 
-    # === Show review (no markdown formatting) ===
     gum format --theme=dark <<<"# Review your info
 
 ✅ Name: $USER_NAME  
@@ -74,8 +109,6 @@ EOF
       break
     else
       gum style --foreground 3 "🔁 Let's try again..."
-      
-      # === Clear screen and load banner.sh again ===
       clear
       if [[ -x "$MODULES/banner.sh" ]]; then
         "$MODULES/banner.sh"
@@ -84,6 +117,10 @@ EOF
       fi
     fi
   done
+}
+
+install_user_profile() {
+  ask_user_profile
 }
 
 config_user_profile() {
@@ -95,16 +132,26 @@ clean_user_profile() {
   gum style --foreground 1 "🗑️ Removed $CONFIG_FILE"
 }
 
-# === Dispatcher ===
+# === Entry Point ===
 case "$ACTION" in
-  install|config|all)
+  all)
+    install_dependencies
+    install_user_profile
+    ;;
+  deps)
+    install_dependencies
+    ;;
+  install)
+    install_user_profile
+    ;;
+  config)
     config_user_profile
     ;;
   clean)
     clean_user_profile
     ;;
   *)
-    echo "Usage: $0 [install|config|clean|all]"
+    echo "Usage: $0 [all|deps|install|config|clean]"
     exit 1
     ;;
 esac
