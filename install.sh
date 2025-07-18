@@ -8,12 +8,12 @@ MODULES="$SCRIPT_DIR/modules"
 
 clear
 
-# === Run the banner ===
+# === Run the banner if available ===
 if [[ -x "$MODULES/banner.sh" ]]; then
   "$MODULES/banner.sh"
 fi
 
-# === Confirm before anything else ===
+# === Confirm install ===
 if ! gum confirm "🤔 Do you want to continue with the installation?"; then
   gum log --level info "🚫 Installation cancelled by user."
   exit 0
@@ -34,8 +34,27 @@ fi
 # === Run sudo check ===
 "$MODULES/check-sudo.sh"
 
-# === Determine action (default: all) ===
-ACTION="${1:-all}"
+# === Parse flags and action ===
+FLAGS=()
+ACTION=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --verbose|--quiet)
+      FLAGS+=("$arg")
+      ;;
+    all|install|config|clean)
+      ACTION="$arg"
+      ;;
+    *)
+      gum log --level error "❌ Unknown argument: $arg"
+      exit 1
+      ;;
+  esac
+done
+
+# Default action if not specified
+ACTION="${ACTION:-all}"
 
 # === Check user-profile.sh exists ===
 if [[ ! -x "$MODULES/user-profile.sh" ]]; then
@@ -57,15 +76,18 @@ clear
 # === GNOME or terminal path ===
 if command -v gnome-shell &>/dev/null; then
   gum log --level info "GNOME desktop detected. Including full desktop environment setup."
-
-  "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
+  "$SCRIPT_DIR/install-terminal.sh" "${FLAGS[@]}" "$ACTION"
+  "$SCRIPT_DIR/install-desktop.sh" "${FLAGS[@]}" "$ACTION"
+  "$SCRIPT_DIR/install-optional.sh" "${FLAGS[@]}" "$ACTION"
   DESKTOP_STATUS=$?
 else
   gum log --level info "**GNOME** not detected. Running terminal only installation."
-  "$SCRIPT_DIR/install-terminal.sh" "$ACTION"
+  "$SCRIPT_DIR/install-terminal.sh" "${FLAGS[@]}" "$ACTION"
+  "$SCRIPT_DIR/install-optional.sh" "${FLAGS[@]}" "$ACTION"
   DESKTOP_STATUS=$?
 fi
 
+# === Final status ===
 if [[ $DESKTOP_STATUS -eq 0 ]]; then
   gum log --level info "✅ Installation completed successfully."
   if command -v gnome-shell &>/dev/null; then

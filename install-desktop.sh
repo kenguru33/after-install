@@ -6,69 +6,62 @@ trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
-# === Check for required scripts ===
-if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
-  echo "❌ Missing or non-executable: $MODULES/check-sudo.sh"
-  exit 1
-fi
+# === Default SHOW_OUTPUT is 0 (quiet) ===
+SHOW_OUTPUT="${SHOW_OUTPUT:-0}"
 
-# === Run sudo check ===
-"$MODULES/check-sudo.sh"
+# === Parse optional flags ===
+for arg in "$@"; do
+  case "$arg" in
+    --verbose)
+      SHOW_OUTPUT=1
+      shift
+      ;;
+    --quiet)
+      SHOW_OUTPUT=0
+      shift
+      ;;
+  esac
+done
 
-# === Dispatch actions to modules ===
+# === Determine action (e.g. all, install, config, clean) ===
 ACTION="${1:-all}"
 
+# === Utility function for conditional spinner ===
 run_with_spinner() {
   TITLE="$1"
   CMD="$2"
-  gum spin --title "$TITLE" -- bash -c "$CMD"
+
+  if [[ "$SHOW_OUTPUT" == "1" ]]; then
+    echo "▶️ $TITLE"
+    bash -c "$CMD"
+  else
+    gum spin --title "$TITLE" -- bash -c "$CMD"
+  fi
 }
 
 case "$ACTION" in
   all)
-    $MODULES/../install-terminal.sh all
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh all"
+    run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus-icon-theme.sh all"
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh all"
-    #run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh all"
-    #run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh all"
-    #run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh all"
-    #run_with_spinner "Installing BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh all"
-    run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus.sh all"
-    run_with_spinner "Installing Profile image from gravatar..." "$MODULES/install-gravatar.sh all"
-    $MODULES/../install-desktop-optional.sh all
     ;;
   install)
-    run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh install"
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh install"
-    #run_with_spinner "Installing Kitty terminal..." "$MODULES/install-kitty.sh install"
-    #run_with_spinner "Installing VS Code..." "$MODULES/install-vscode.sh install"
-    run_with_spinner "Installing terminal environment..." "$MODULES/../install-terminal.sh install"
-    #run_with_spinner "Installing Chrome..." "$MODULES/install-chrome.sh install"
-    #run_with_spinner "Installing BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh install"
-    run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus.sh install"
+    run_with_spinner "Installing icon theme..." "$MODULES/install-papirus-icon-theme.sh install"
+    run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh install"
     ;;
   config)
+    run_with_spinner "Configuring GNOME..." "$MODULES/install-gnome-config.sh config"
+    run_with_spinner "Configuring icon theme..." "$MODULES/install-papirus-icon-theme.sh config"
     run_with_spinner "Configuring GNOME extensions..." "$MODULES/install-gnome-extensions.sh config"
-    run_with_spinner "Configuring GNOME config..." "$MODULES/install-gnome-config.sh config"
-    run_with_spinner "Configuring Papirus icon theme..." "$MODULES/install-papirus.sh config"
-    run_with_spinner "Configuring Kitty terminal..." "$MODULES/install-kitty.sh config"
-    run_with_spinner "Configuring VS Code..." "$MODULES/install-vscode.sh config"
-    run_with_spinner "Configuring terminal environment..." "$MODULES/../install-terminal.sh config"
-    run_with_spinner "Configuring Chrome..." "$MODULES/install-chrome.sh config"
-    run_with_spinner "Configuring BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh config"
     ;;
   clean)
     run_with_spinner "Cleaning GNOME config..." "$MODULES/install-gnome-config.sh clean"
-    run_with_spinner "Cleaning Papirus icon theme..." "$MODULES/install-papirus.sh clean"
+    run_with_spinner "Cleaning icon theme..." "$MODULES/install-papirus-icon-theme.sh clean"
     run_with_spinner "Cleaning GNOME extensions..." "$MODULES/install-gnome-extensions.sh clean"
-    run_with_spinner "Cleaning Kitty terminal..." "$MODULES/install-kitty.sh clean"
-    run_with_spinner "Cleaning VS Code..." "$MODULES/install-vscode.sh clean"
-    run_with_spinner "Cleaning terminal environment..." "$MODULES/../install-terminal.sh clean"
-    run_with_spinner "Cleaning Chrome..." "$MODULES/install-chrome.sh clean"
-    run_with_spinner "Cleaning BlackBox Terminal..." "$MODULES/install-blackbox-terminal.sh clean"
     ;;
   *)
-    echo "Usage: $0 [all|install|config|clean]"
+    echo "Usage: $0 [--verbose|--quiet] [all|install|config|clean]"
     exit 1
     ;;
 esac

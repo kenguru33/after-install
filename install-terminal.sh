@@ -3,8 +3,28 @@ set -e
 
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
+
+# === Default SHOW_OUTPUT is quiet ===
+SHOW_OUTPUT="${SHOW_OUTPUT:-0}"
+
+# === Parse optional flags ===
+for arg in "$@"; do
+  case "$arg" in
+    --verbose)
+      SHOW_OUTPUT=1
+      shift
+      ;;
+    --quiet)
+      SHOW_OUTPUT=0
+      shift
+      ;;
+  esac
+done
+
+# === Determine action (e.g. all, install, config, clean) ===
+ACTION="${1:-all}"
 
 # === Check for required scripts ===
 if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
@@ -12,16 +32,19 @@ if [[ ! -x "$MODULES/check-sudo.sh" ]]; then
   exit 1
 fi
 
-# === Run sudo check ===
 "$MODULES/check-sudo.sh"
 
-# === Dispatch actions to modules ===
-ACTION="${1:-all}"
-
+# === Function to optionally run with spinner or full output ===
 run_with_spinner() {
   TITLE="$1"
   CMD="$2"
-  gum spin --title "$TITLE" -- bash -c "$CMD"
+
+  if [[ "$SHOW_OUTPUT" == "1" ]]; then
+    echo "▶️ $TITLE"
+    bash -c "$CMD"
+  else
+    gum spin --title "$TITLE" -- bash -c "$CMD"
+  fi
 }
 
 case "$ACTION" in
@@ -31,9 +54,6 @@ case "$ACTION" in
     run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh all"
     run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh all"
     run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh all"
-    #run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh all"
-    run_with_spinner "Installing k9s..." "$MODULES/install-k9s.sh all"
-    $MODULES/../install-terminal-optional.sh all
     ;;
   install)
     run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh install"
@@ -48,6 +68,7 @@ case "$ACTION" in
     run_with_spinner "Configuring Zsh..." "$MODULES/install-zsh.sh config"
     run_with_spinner "Configuring Nerd Fonts..." "$MODULES/install-nerdfonts.sh config"
     run_with_spinner "Configuring Lazyvim..." "$MODULES/install-lazyvim.sh config"
+  
     ;;
   clean)
     run_with_spinner "Cleaning Git config..." "$MODULES/install-git.sh clean"
@@ -57,7 +78,7 @@ case "$ACTION" in
     run_with_spinner "Cleaning Lazyvim..." "$MODULES/install-lazyvim.sh clean"
     ;;
   *)
-    echo "Usage: $0 [all|install|config|clean]"
+    echo "Usage: $0 [--verbose|--quiet] [all|install|config|clean]"
     exit 1
     ;;
 esac

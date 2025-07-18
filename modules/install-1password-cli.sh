@@ -43,22 +43,23 @@ install_cli() {
 
   if [[ "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
     echo "🔑 Importing GPG key and setting up APT repo..."
-    curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
-      sudo gpg --dearmor --output "$KEYRING"
+    sudo mkdir -p "$(dirname "$KEYRING")"
+    curl -sS https://downloads.1password.com/linux/keys/1password.asc |
+      gpg --dearmor | sudo tee "$KEYRING" > /dev/null
 
     echo "📁 Adding APT repo..."
-    echo "deb [arch=$ARCH signed-by=$KEYRING] https://downloads.1password.com/linux/debian/$ARCH stable main" | \
+    echo "deb [arch=$ARCH signed-by=$KEYRING] https://downloads.1password.com/linux/debian/$ARCH stable main" |
       sudo tee "$REPO_LIST" > /dev/null
 
     echo "📜 Adding debsig policy..."
     sudo mkdir -p "$POLICY_DIR"
-    curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | \
+    curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol |
       sudo tee "$POLICY_FILE" > /dev/null
 
     echo "🔑 Adding debsig GPG key..."
     sudo mkdir -p "$KEYRING_DIR"
-    curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
-      sudo gpg --dearmor --output "$DEBSIG_KEY"
+    curl -sS https://downloads.1password.com/linux/keys/1password.asc |
+      gpg --dearmor | sudo tee "$DEBSIG_KEY" > /dev/null
 
     echo "📦 Installing via APT (non-interactive)..."
     sudo apt update
@@ -109,12 +110,16 @@ clean_cli() {
 
 # === Dispatcher ===
 case "$ACTION" in
-  deps) install_deps ;;
+  deps)
+    install_deps
+    ;;
   install)
     install_deps
     install_cli
     ;;
-  clean) clean_cli ;;
+  clean)
+    clean_cli
+    ;;
   all)
     install_deps
     install_cli

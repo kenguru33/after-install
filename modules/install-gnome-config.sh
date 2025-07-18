@@ -15,37 +15,36 @@ else
   exit 1
 fi
 
-# === Dependencies ===
-DEPS=("gsettings" "glib2-tools")
+# === Set DEPS based on distro ===
+if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+  DEPS=(libglib2.0-bin gsettings)
+  INSTALL_CMD="sudo apt install -y"
+  UPDATE_CMD="sudo apt update"
+elif [[ "$ID" == "fedora" ]]; then
+  DEPS=(glib2-tools gsettings)
+  INSTALL_CMD="sudo dnf install -y"
+  UPDATE_CMD="sudo dnf check-update || true"
+else
+  echo "❌ Unsupported OS: $ID"
+  exit 1
+fi
 
+# === Dependency Installer ===
 install_dependencies() {
   echo "🔧 Checking required dependencies..."
+  $UPDATE_CMD
 
-  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-    sudo apt update
-    for dep in "${DEPS[@]}"; do
-      if ! command -v "$dep" &>/dev/null; then
-        echo "📦 Installing $dep..."
-        sudo apt install -y "$dep"
-      else
-        echo "✅ $dep is already installed."
-      fi
-    done
-
-  elif [[ "$ID" == "fedora" ]]; then
-    # gsettings comes from glib2-tools
-    if ! command -v gsettings &>/dev/null; then
-      echo "📦 Installing glib2-tools (for gsettings)..."
-      sudo dnf install -y glib2-tools
+  for dep in "${DEPS[@]}"; do
+    if ! command -v "$dep" &>/dev/null; then
+      echo "📦 Installing $dep..."
+      $INSTALL_CMD "$dep"
     else
-      echo "✅ gsettings is already installed."
+      echo "✅ $dep is already installed."
     fi
-  else
-    echo "❌ Unsupported OS: $ID"
-    exit 1
-  fi
+  done
 }
 
+# === Wallpaper installer ===
 install_config() {
   echo "📁 Checking for wallpaper in: $WALLPAPER_SOURCE"
 
@@ -60,6 +59,7 @@ install_config() {
   echo "✅ Wallpaper copied to: $WALLPAPER_DEST"
 }
 
+# === GNOME configuration ===
 config_gnome() {
   echo "🎨 Configuring GNOME settings..."
 
@@ -71,6 +71,7 @@ config_gnome() {
   echo "✅ GNOME configuration applied."
 }
 
+# === Reset ===
 clean_config() {
   echo "🧹 Resetting GNOME settings..."
 
@@ -87,6 +88,7 @@ clean_config() {
   echo "✅ GNOME settings reset."
 }
 
+# === Help ===
 show_help() {
   echo "Usage: $0 {all|deps|install|config|clean}"
   echo ""

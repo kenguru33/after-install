@@ -1,27 +1,3 @@
-#!/bin/bash
-set -e
-
-ACTION="${1:-all}"
-
-# Define optional modules and how to detect them
-declare -A MODULES=(
-  [zellij]="command -v zellij"
-  [1password-cli]="command -v op"
-)
-
-MODULE_DIR="./modules"
-
-run_installer_for() {
-  local name="$1"
-  local script="$MODULE_DIR/install-$name.sh"
-
-  if [[ -f "$script" ]]; then
-    gum spin --title "Installing $name..." -- bash "$script" install
-  else
-    echo "⚠️ Missing script: $script"
-  fi
-}
-
 main() {
   local list=()
   local preselect=()
@@ -33,19 +9,22 @@ main() {
     fi
   done
 
+  # Build correct multiple --selected arguments
+  local SELECTED_ARGS=()
+  for item in "${preselect[@]}"; do
+    SELECTED_ARGS+=(--selected "$item")
+  done
+
   # Show checklist with installed modules preselected
   local selected=()
   IFS=$'\n' read -r -d '' -a selected < <(
-    printf "%s\n" "${list[@]}" | gum choose --no-limit --selected="${preselect[*]}" \
-      --header="Select packages to install" --height=15 && printf '\0'
+    printf "%s\n" "${list[@]}" | gum choose --no-limit "${SELECTED_ARGS[@]}" \
+      --header="Select optional terminal packages to install" --height=15 && printf '\0'
   )
 
-  [[ ${#selected[@]} -eq 0 ]] && echo "❌ Nothing selected. Exiting." && exit 0
+  [[ ${#selected[@]} -eq 0 ]] && echo "❌ Nothing selected. Skipping." && exit 0
 
   for name in "${selected[@]}"; do
     run_installer_for "$name"
   done
-  
 }
-
-[[ "$ACTION" == "all" ]] && main
