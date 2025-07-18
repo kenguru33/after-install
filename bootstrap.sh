@@ -39,9 +39,9 @@ if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
   tmp="/tmp/bootstrap.sh"
   echo "⚙️ Re-downloading bootstrap script..."
   if command -v curl &>/dev/null; then
-    curl -fsSL "https://.../bootstrap.sh" -o "$tmp"
+    curl -fsSL "https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh" -o "$tmp"
   else
-    wget -qO "$tmp" "https://.../bootstrap.sh"
+    wget -qO "$tmp" "https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh"
   fi
   chmod +x "$tmp"
   clear
