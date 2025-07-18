@@ -6,43 +6,54 @@ CONFIG_DIR="$HOME/.config/nvim"
 BACKUP_DIR="$HOME/.config/nvim.bak"
 ACTION="${1:-all}"
 
-install_neovim() {
-  echo "📦 Installing Neovim + build tools..."
+# === OS Detection ===
+if [ -f /etc/os-release ]; then
+  . /etc/os-release
+  OS_ID="$ID"
+else
+  echo "❌ Cannot detect operating system."
+  exit 1
+fi
 
-  sudo apt update
-  sudo apt install -y \
-    neovim \
-    git \
-    curl \
-    unzip \
-    build-essential \
-    ripgrep \
-    fd-find \
-    fzf \
-    pkg-config \
-    ninja-build \
-    libtool \
-    autoconf \
-    automake \
-    gdb
+install_deps() {
+  echo "📦 Installing Neovim + build dependencies..."
 
-  echo "✅ Neovim and build tools installed."
+  case "$OS_ID" in
+    debian | ubuntu)
+      DEPS=(
+        neovim git curl unzip build-essential
+        ripgrep fd-find fzf
+        pkg-config ninja-build libtool autoconf automake gdb
+      )
+      sudo apt update
+      sudo apt install -y "${DEPS[@]}"
+      ;;
+    fedora)
+      DEPS=(
+        neovim git curl unzip
+        ripgrep fd-find fzf
+        pkgconf-pkg-config ninja-build libtool autoconf automake gdb make
+      )
+      sudo dnf install -y "${DEPS[@]}"
+      ;;
+    *)
+      echo "❌ Unsupported OS: $OS_ID"
+      exit 1
+      ;;
+  esac
+
+  echo "✅ Dependencies installed."
 }
 
 config_lazyvim() {
   echo "⚙️ Configuring LazyVim..."
 
-  # Check if config directory exists and is not empty
   if [[ -d "$CONFIG_DIR" && ! -L "$CONFIG_DIR" ]]; then
     echo "🔄 Backing up existing config to $BACKUP_DIR"
-
-    # Check if backup directory already exists
     if [[ -d "$BACKUP_DIR" ]]; then
-      # Add timestamp to the backup folder to avoid overwriting
       BACKUP_DIR="$HOME/.config/nvim.bak_$(date +%Y%m%d%H%M%S)"
-      echo "⚠️ Backup folder already exists. Creating a new backup folder: $BACKUP_DIR"
+      echo "⚠️ Backup folder already exists. Creating: $BACKUP_DIR"
     fi
-
     mv "$CONFIG_DIR" "$BACKUP_DIR"
   fi
 
@@ -112,38 +123,36 @@ EOF
 clean_neovim() {
   echo "🧹 Removing Neovim and build tools..."
 
-  sudo apt purge -y \
-    neovim \
-    build-essential \
-    ripgrep \
-    fd-find \
-    fzf \
-    pkg-config \
-    ninja-build \
-    libtool \
-    autoconf \
-    automake \
-    gdb || true
-
-  sudo apt autoremove -y
+  case "$OS_ID" in
+    debian | ubuntu)
+      sudo apt purge -y neovim build-essential ripgrep fd-find fzf \
+        pkg-config ninja-build libtool autoconf automake gdb || true
+      sudo apt autoremove -y
+      ;;
+    fedora)
+      sudo dnf remove -y neovim ripgrep fd-find fzf \
+        pkgconf-pkg-config ninja-build libtool autoconf automake gdb make || true
+      ;;
+  esac
 
   rm -rf "$CONFIG_DIR" "$BACKUP_DIR"
 
   echo "✅ Clean complete."
 }
 
-# === Run selected action ===
+# === Dispatcher ===
 case "$ACTION" in
-  install) install_neovim ;;
+  deps) install_deps ;;
+  install) install_deps ;;
   config) config_lazyvim ;;
   clean) clean_neovim ;;
   all)
-    install_neovim
+    install_deps
     config_lazyvim
     ;;
   *)
     echo "❌ Unknown action: $ACTION"
-    echo "Usage: $0 [all|install|config|clean]"
+    echo "Usage: $0 [all|deps|install|config|clean]"
     exit 1
     ;;
 esac
