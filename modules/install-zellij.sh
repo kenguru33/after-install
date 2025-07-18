@@ -1,13 +1,46 @@
 #!/bin/bash
 set -e
+trap 'echo "❌ Something went wrong. Exiting." >&2' ERR
 
 # === Metadata ===
+MODULE_NAME="zellij"
 SCRIPT_NAME="install-zellij.sh"
 MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZELLIJ_CONFIG_DIR="$HOME/.config/zellij"
 ZELLIJ_CONFIG_FILE="$ZELLIJ_CONFIG_DIR/config.kdl"
 ZELLIJ_BIN="$HOME/.local/bin/zellij"
 ZSHRC_FILE="$HOME/.zshrc"
+
+# === OS Detection ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+  OS_ID="$ID"
+else
+  echo "❌ Could not detect OS."
+  exit 1
+fi
+
+# === Dependencies ===
+DEPS_DEBIAN=(curl tar)
+DEPS_FEDORA=(curl tar)
+
+install_deps() {
+  echo "📦 Installing dependencies for $OS_ID..."
+
+  case "$OS_ID" in
+    debian|ubuntu)
+      sudo apt update
+      sudo apt install -y "${DEPS_DEBIAN[@]}"
+      ;;
+    fedora)
+      sudo dnf install -y "${DEPS_FEDORA[@]}"
+      ;;
+    *)
+      echo "❌ Unsupported OS: $OS_ID"
+      exit 1
+      ;;
+  esac
+}
 
 # === Install Zellij from GitHub ===
 install() {
@@ -78,7 +111,6 @@ EOF
 
   echo "✅ Zellij theme set to Catppuccin Mocha"
 
-  # === Inject into .zshrc ===
   if [[ -f "$ZSHRC_FILE" ]] && grep -q "exec zellij" "$ZSHRC_FILE"; then
     echo "ℹ️ Zellij already set in $ZSHRC_FILE"
   else
@@ -101,27 +133,25 @@ clean() {
   [[ -d "$ZELLIJ_CONFIG_DIR" ]] && rm -rf "$ZELLIJ_CONFIG_DIR" && echo "🗑️ Removed config: $ZELLIJ_CONFIG_DIR"
   [[ -f "$ZELLIJ_BIN" ]] && rm -f "$ZELLIJ_BIN" && echo "🗑️ Removed binary: $ZELLIJ_BIN"
 
-  # Optional: remove from .zshrc
   if grep -q "# === Auto-start Zellij" "$ZSHRC_FILE"; then
     sed -i '/# === Auto-start Zellij/,/fi/d' "$ZSHRC_FILE"
     echo "🗑️ Removed Zellij autostart from $ZSHRC_FILE"
   fi
 }
 
-# === Run all ===
-all() {
-  install
-  config
-}
-
 # === Entry Point ===
 case "$1" in
+  deps) install_deps ;;
   install) install ;;
   config) config ;;
   clean) clean ;;
-  all|"") all ;;
+  all|"")
+    install_deps
+    install
+    config
+    ;;
   *)
-    echo "Usage: $SCRIPT_NAME [all|install|config|clean]"
+    echo "Usage: $SCRIPT_NAME [deps|install|config|clean|all]"
     exit 1
     ;;
 esac
