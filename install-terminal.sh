@@ -27,7 +27,7 @@ run_with_spinner() {
 case "$ACTION" in
   all)
     run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh all"
-    run_with_spinner "Installing Git..." "$MODULES/install-git.sh all"
+    run_with_spinner "Installing Git configuration..." "$MODULES/install-git-config.sh all"
     run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh all"
     run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh all"
     run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh all"
