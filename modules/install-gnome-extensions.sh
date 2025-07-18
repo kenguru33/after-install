@@ -13,17 +13,47 @@ EXTENSIONS=(
 TO_ENABLE_AFTER_LOGIN=()
 ACTION="${1:-all}"
 
-install_dependencies() {
-  echo "🔧 Installing required dependencies..."
-  sudo apt update
-  sudo apt install -y curl unzip jq gnome-shell-extension-prefs dconf-cli
+# === OS Detection ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+  OS_ID="$ID"
+else
+  echo "❌ Cannot detect OS."
+  exit 1
+fi
+
+# === Define DEPS ===
+DEPS=()
+case "$OS_ID" in
+  debian|ubuntu)
+    DEPS=(curl unzip jq gnome-shell-extension-prefs dconf-cli)
+    ;;
+  fedora)
+    DEPS=(curl unzip jq gnome-extensions-app dconf)
+    ;;
+  *)
+    echo "❌ Unsupported OS: $OS_ID"
+    exit 1
+    ;;
+esac
+
+install_deps() {
+  echo "📦 Installing dependencies for $OS_ID..."
+  case "$OS_ID" in
+    debian|ubuntu)
+      sudo apt update
+      sudo apt install -y "${DEPS[@]}"
+      ;;
+    fedora)
+      sudo dnf install -y "${DEPS[@]}"
+      ;;
+  esac
 }
 
+# === GNOME Extension Install ===
+
 reload_gnome_shell() {
-  echo ""
-  echo "🔁 Extensions installed."
-  echo "🚨 Please log out and back in to complete activation."
-  echo ""
+  echo -e "\n🔁 Extensions installed.\n🚨 Please log out and back in to complete activation.\n"
 }
 
 enable_extension_safely() {
@@ -45,10 +75,7 @@ install_extensions() {
     echo "🌐 Searching for $EXT_ID..."
     METADATA=$(curl -s "https://extensions.gnome.org/extension-query/?search=${EXT_ID}" | jq -r --arg uuid "$EXT_ID" '.extensions[] | select(.uuid == $uuid)')
 
-    if [[ -z "$METADATA" ]]; then
-      echo "❌ Extension $EXT_ID not found."
-      continue
-    fi
+    [[ -z "$METADATA" ]] && echo "❌ Extension $EXT_ID not found." && continue
 
     PK_ID=$(echo "$METADATA" | jq -r '.pk')
     VERSION_JSON=$(curl -s "https://extensions.gnome.org/extension-info/?pk=${PK_ID}&shell_version=${GNOME_VERSION}")
@@ -64,9 +91,8 @@ install_extensions() {
     [[ -z "$METADATA_PATH" ]] && echo "❌ metadata.json not found" && continue
 
     ACTUAL_UUID=$(jq -r '.uuid' "$METADATA_PATH")
-    [[ -z "$ACTUAL_UUID" || "$ACTUAL_UUID" == "null" ]] && echo "❌ UUID not found in metadata.json" && continue
+    [[ -z "$ACTUAL_UUID" || "$ACTUAL_UUID" == "null" ]] && echo "❌ UUID missing" && continue
 
-    echo "📛 UUID: $ACTUAL_UUID"
     DEST="$EXT_DIR/$ACTUAL_UUID"
     EXT_ROOT="$(dirname "$METADATA_PATH")"
 
@@ -76,10 +102,8 @@ install_extensions() {
     cp -r "$EXT_ROOT"/* "$DEST"
 
     if [[ -d "$DEST/schemas" ]]; then
-      echo "🔧 Compiling schemas for $ACTUAL_UUID..."
+      echo "🔧 Compiling schemas..."
       glib-compile-schemas "$DEST/schemas"
-
-      echo "📂 Copying schemas to user schema directory..."
       mkdir -p ~/.local/share/glib-2.0/schemas
       find "$DEST/schemas" -name '*.gschema.xml' -exec cp {} ~/.local/share/glib-2.0/schemas/ \;
     fi
@@ -109,53 +133,22 @@ config_extensions() {
 
   export GSETTINGS_SCHEMA_DIR="$HOME/.local/share/glib-2.0/schemas"
 
-  echo "🎨 Configuring Blur My Shell..."
+  echo "🎨 Blur My Shell"
   gsettings set org.gnome.shell.extensions.blur-my-shell brightness 0.8
   gsettings set org.gnome.shell.extensions.blur-my-shell sigma 30
   gsettings set org.gnome.shell.extensions.blur-my-shell color-and-noise true
   gsettings set org.gnome.shell.extensions.blur-my-shell hacks-level 1
 
-  echo "🧩 Setting Blur My Shell [panel] config via dconf..."
   if command -v dconf &>/dev/null; then
-    #dconf write /org/gnome/shell/extensions/blur-my-shell/panel/pipeline "'pipeline_default_rounded'" || echo "⚠️ Failed to set pipeline."
-    dconf write /org/gnome/shell/extensions/blur-my-shell/panel/override-background-dynamically false || echo "⚠️ Failed to set override-background-dynamically."
-
-    echo "🔍 Verifying panel config:"
-    dconf read /org/gnome/shell/extensions/blur-my-shell/panel/pipeline || echo "(pipeline not readable)"
-    dconf read /org/gnome/shell/extensions/blur-my-shell/panel/override-background-dynamically || echo "(override-background-dynamically not readable)"
-  else
-    echo "❌ 'dconf' not available. Skipping panel configuration."
+    dconf write /org/gnome/shell/extensions/blur-my-shell/panel/override-background-dynamically false || true
   fi
-
-  echo "🧱 Configuring Tiling Shell..."
-  #gsettings set org.gnome.shell.extensions.tilingshell inner-gaps 8
-  #gsettings set org.gnome.shell.extensions.tilingshell outer-gaps 10
-  #gsettings set org.gnome.shell.extensions.tilingshell enable-tiling-system true
-  #gsettings set org.gnome.shell.extensions.tilingshell enable-autotiling true
-  #gsettings set org.gnome.shell.extensions.tilingshell enable-snap-assist true
-  #gsettings set org.gnome.shell.extensions.tilingshell show-indicator true
-  #gsettings set org.gnome.shell.extensions.tilingshell window-border-width 2
-}
-
-reset_extensions() {
-  echo "♻️ Resetting extension settings to defaults..."
-  for schema in \
-    org.gnome.shell.extensions.blur-my-shell \
-    org.gnome.shell.extensions.rounded-window-corners-reborn \
-    org.gnome.shell.extensions.tilingshell; do
-    echo "🔄 Resetting $schema..."
-    gsettings reset-recursively "$schema" || true
-  done
 }
 
 clean_extensions() {
   echo "🧼 Removing extensions..."
-
   for EXT_ID in "${EXTENSIONS[@]}"; do
-    echo "🌐 Searching for $EXT_ID..."
     METADATA=$(curl -s "https://extensions.gnome.org/extension-query/?search=${EXT_ID}" | jq -r --arg uuid "$EXT_ID" '.extensions[] | select(.uuid == $uuid)')
-
-    [[ -z "$METADATA" ]] && echo "⚠️ Skipping unknown $EXT_ID" && continue
+    [[ -z "$METADATA" ]] && continue
 
     PK_ID=$(echo "$METADATA" | jq -r '.pk')
     VERSION_JSON=$(curl -s "https://extensions.gnome.org/extension-info/?pk=${PK_ID}&shell_version=${GNOME_VERSION}")
@@ -164,7 +157,6 @@ clean_extensions() {
     curl -sL "$DL_URL" -o "$TMP_ZIP"
     TMP_UNPACK=$(mktemp -d)
     unzip -oq "$TMP_ZIP" -d "$TMP_UNPACK"
-
     METADATA_PATH=$(find "$TMP_UNPACK" -type f -name metadata.json | head -n1)
     ACTUAL_UUID=$(jq -r '.uuid' "$METADATA_PATH")
 
@@ -176,26 +168,25 @@ clean_extensions() {
 
 # === Main Dispatcher ===
 case "$ACTION" in
+  deps)
+    install_deps
+    ;;
   install)
-    install_dependencies
     install_extensions
     ;;
   config)
     config_extensions
     ;;
-  reset)
-    reset_extensions
-    ;;
   clean)
     clean_extensions
     ;;
   all)
-    install_dependencies
+    install_deps
     install_extensions
     config_extensions
     ;;
   *)
-    echo "Usage: $0 [install|config|reset|clean|all]"
+    echo "Usage: $0 [deps|install|config|clean|all]"
     exit 1
     ;;
 esac
