@@ -12,7 +12,44 @@ ACTION="${1:-all}"
 EMAIL="${2:-}"
 SIZE="${3:-$DEFAULT_SIZE}"
 
-# === Functions ===
+# === Detect OS ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+else
+  echo "❌ Cannot detect OS. /etc/os-release missing."
+  exit 1
+fi
+
+# === Dependencies ===
+DEPS=("curl")
+
+install_dependencies() {
+  echo "🔧 Installing required dependencies..."
+
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt update
+    for dep in "${DEPS[@]}"; do
+      if ! dpkg -l | grep -qw "$dep"; then
+        echo "📦 Installing $dep..."
+        sudo apt install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+  elif [[ "$ID" == "fedora" ]]; then
+    for dep in "${DEPS[@]}"; do
+      if ! rpm -q "$dep" >/dev/null 2>&1; then
+        echo "📦 Installing $dep..."
+        sudo dnf install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+  else
+    echo "❌ Unsupported OS: $ID"
+    exit 1
+  fi
+}
 
 find_email() {
   if [[ -n "$EMAIL" ]]; then
@@ -33,19 +70,13 @@ find_email() {
     return
   fi
 
-  echo "❌ No email provided and none found in after-install config or module config."
-  echo "Usage: $0 config your@email.com [size]"
+  echo "❌ No email provided and no config found."
+  echo "💡 Please run: ./user-profile.sh"
   exit 1
 }
 
 install() {
-  echo "📦 Installing required dependency: curl"
-  if ! command -v curl &>/dev/null; then
-    sudo apt update
-    sudo apt install -y curl
-  else
-    echo "✅ curl is already installed."
-  fi
+  echo "📦 No-op install step. Nothing to do here for now."
 }
 
 config() {
@@ -59,20 +90,20 @@ config() {
 
   echo "⬇️ Downloading Gravatar from: $GRAVATAR_URL"
   curl -sL "$GRAVATAR_URL" -o "$FACE_IMAGE"
-
   echo "🖼️ Saved avatar to $FACE_IMAGE"
 
-  # Update GNOME user avatar using gsettings
+  # Set GNOME avatar using gsettings if available
   if command -v gsettings &>/dev/null; then
     echo "🔧 Setting GNOME account picture via gsettings..."
     gsettings set org.gnome.desktop.account-service account-picture "$FACE_IMAGE" 2>/dev/null || true
   fi
 
-  # Ensure GDM uses the same image
+  # Copy to GDM location
+  echo "🔧 Setting GDM login avatar..."
   sudo mkdir -p "$GDM_ICON_DIR"
   sudo cp "$FACE_IMAGE" "$GDM_ICON_DIR/$(whoami)"
 
-  # Update AccountsService database to ensure the avatar is recognized by GDM
+  # AccountsService config
   ACCOUNTS_USER_CONFIG="/var/lib/AccountsService/users/$(whoami)"
   sudo mkdir -p "$(dirname "$ACCOUNTS_USER_CONFIG")"
   sudo tee "$ACCOUNTS_USER_CONFIG" > /dev/null <<EOF
@@ -84,25 +115,36 @@ EOF
 }
 
 clean() {
-  echo "🧹 Removing avatar and module email config..."
+  echo "🧹 Removing avatar and email config..."
   rm -f "$FACE_IMAGE"
   rm -f "$MODULE_EMAIL_FILE"
   echo "✅ Clean complete."
 }
 
 all() {
-  install
+  install_dependencies
   config
 }
 
-# === Main Switch ===
+# === Entry Point ===
 case "$ACTION" in
-  install) install ;;
-  config) config ;;
-  clean) clean ;;
-  all) all ;;
+  all)
+    all
+    ;;
+  deps)
+    install_dependencies
+    ;;
+  install)
+    install
+    ;;
+  config)
+    config
+    ;;
+  clean)
+    clean
+    ;;
   *)
-    echo "Usage: $0 {install|config|clean|all} [email] [size]"
+    echo "Usage: $0 {all|deps|install|config|clean} [email] [size]"
     exit 1
     ;;
 esac

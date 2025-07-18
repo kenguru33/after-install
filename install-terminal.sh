@@ -31,7 +31,7 @@ case "$ACTION" in
     run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh all"
     run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh all"
     run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh all"
-    run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh all"
+    #run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh all"
     run_with_spinner "Installing k9s..." "$MODULES/install-k9s.sh all"
     $MODULES/../install-terminal-optional.sh all
     ;;

@@ -1,66 +1,79 @@
 #!/bin/bash
 set -e
-trap 'echo "❌ Something went wrong. Exiting." >&2' ERR
 
-# === Prompt for sudo early ===
-sudo -v
-( while true; do sudo -n true; sleep 60; done ) 2>/dev/null &
-SUDO_KEEPALIVE_PID=$!
-trap 'kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
-
+# === Config ===
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 USERNAME="${SUDO_USER:-$USER}"
+DEPS=("zsh" "git" "curl" "wget" "unzip")
 
-install_zsh() {
-  echo "🐚 Installing Zsh and dependencies..."
-  sudo apt update
-  sudo apt install -y zsh git curl wget unzip
+# === Detect OS ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+else
+  echo "❌ Cannot detect OS. /etc/os-release missing."
+  exit 1
+fi
 
-  echo "✅ Zsh installed."
+# === Step 1: Install system packages and set Zsh as default ===
+install_dependencies() {
+  echo "🔧 Installing required dependencies..."
 
-  echo "🔁 Setting shell to Zsh for user: $USERNAME"
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt update
+    for dep in "${DEPS[@]}"; do
+      if ! dpkg -l | grep -qw "$dep"; then
+        echo "📦 Installing $dep..."
+        sudo apt install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+  elif [[ "$ID" == "fedora" ]]; then
+    for dep in "${DEPS[@]}"; do
+      if ! rpm -q "$dep" > /dev/null 2>&1; then
+        echo "📦 Installing $dep..."
+        sudo dnf install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+  else
+    echo "❌ Unsupported OS: $ID"
+    exit 1
+  fi
+
+  echo "🐚 Setting Zsh as the default shell for $USERNAME..."
   ZSH_PATH="$(command -v zsh)"
   sudo chsh -s "$ZSH_PATH" "$USERNAME"
-  echo "✅ Shell for '$USERNAME' set to Zsh."
-  echo "🔁 Please log out and back in or restart your terminal."
+  echo "✅ Default shell set to Zsh. Please log out and back in."
 }
 
-install_starship() {
-  echo "🚀 Installing Starship prompt..."
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-  echo "✅ Starship installed."
-}
-
-configure_zsh() {
+# === Step 2: Install Oh My Zsh and Starship ===
+install_zsh() {
   echo "🧠 Installing Oh My Zsh..."
 
   TIMESTAMP=$(date +%Y%m%d%H%M%S)
 
-  # Backup existing Oh My Zsh directory if it exists
-  if [ -d "$HOME/.oh-my-zsh" ]; then
-    BACKUP_DIR="$HOME/.oh-my-zsh.bak.$TIMESTAMP"
-    mv "$HOME/.oh-my-zsh" "$BACKUP_DIR"
-    echo "📦 Existing Oh My Zsh directory found. Backed up to: $BACKUP_DIR"
-  fi
-
-  # Backup existing .zshrc if it exists
-  if [ -f "$HOME/.zshrc" ]; then
-    ZSHRC_BACKUP="$HOME/.zshrc.bak.$TIMESTAMP"
-    mv "$HOME/.zshrc" "$ZSHRC_BACKUP"
-    echo "📜 Existing .zshrc file found. Backed up to: $ZSHRC_BACKUP"
-  fi
+  [[ -d "$HOME/.oh-my-zsh" ]] && mv "$HOME/.oh-my-zsh" "$HOME/.oh-my-zsh.bak.$TIMESTAMP"
+  [[ -f "$HOME/.zshrc" ]] && mv "$HOME/.zshrc" "$HOME/.zshrc.bak.$TIMESTAMP"
 
   export RUNZSH=no
   export CHSH=no
   export KEEP_ZSHRC=yes
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-  echo "🔌 Installing plugins..."
+  echo "🚀 Installing Starship prompt..."
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+}
+
+# === Step 3: Configure plugins, theme, starship ===
+configure_zsh() {
+  echo "🔌 Installing Zsh plugins..."
   git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
   git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
   git clone https://github.com/zsh-users/zsh-completions "$ZSH_CUSTOM/plugins/zsh-completions"
 
-  echo "🧾 Updating .zshrc..."
+  echo "✨ Updating .zshrc..."
   sed -i 's/^plugins=.*/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions)/' ~/.zshrc || true
   sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' ~/.zshrc || true
 
@@ -69,62 +82,65 @@ configure_zsh() {
     echo 'autoload -Uz compinit && compinit'
   } >> ~/.zshrc
 
-  echo "✨ Enabling Starship in .zshrc..."
-  if ! grep -q 'eval "$(starship init zsh)"' ~/.zshrc 2>/dev/null; then
-    echo 'eval "$(starship init zsh)"' >> ~/.zshrc
-  fi
-
-  echo "✅ Oh My Zsh configured."
+  echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+  echo "✅ Zsh configuration complete."
 }
 
-clean_zsh() {
-  echo "🧹 Removing Zsh configs and plugins..."
+# === Step 4: Clean everything ===
+cleanup() {
+  echo "🧹 Cleaning up Zsh and related config..."
+
   rm -rf ~/.oh-my-zsh ~/.zshrc ~/.zshenv ~/.zprofile ~/.zsh ~/.zcompdump* ~/.config/starship.toml
 
-  echo "🔁 Switching shell back to Bash for user: $USERNAME"
   if command -v bash >/dev/null; then
     sudo chsh -s "$(command -v bash)" "$USERNAME"
-    echo "✅ Shell for '$USERNAME' set to Bash."
-    echo "🔁 Please log out and back in or restart your terminal."
-  else
-    echo "⚠️ Bash not found. Cannot change shell."
+    echo "✅ Shell reverted to Bash. Please log out and back in."
   fi
 
-  echo "🧽 Uninstalling Zsh and Starship..."
-  sudo apt remove --purge -y zsh
-  sudo apt autoremove -y
-  sudo rm -f /usr/local/bin/starship
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt remove --purge -y zsh
+    sudo apt autoremove -y
+  elif [[ "$ID" == "fedora" ]]; then
+    sudo dnf remove -y zsh
+    sudo dnf autoremove -y || true
+  fi
 
-  echo "✅ Zsh and related tools removed."
+  sudo rm -f /usr/local/bin/starship
+  echo "✅ Cleanup complete."
 }
 
+# === Help ===
 show_help() {
-  echo "Usage: $0 [all|install|config|clean]"
+  echo "Usage: $0 [all|deps|install|config|clean]"
   echo ""
-  echo "  all      Install Zsh, Starship, plugins"
-  echo "  install  Only install Zsh and set shell"
-  echo "  config   Setup Oh My Zsh, plugins, Starship"
-  echo "  clean    Remove Zsh, reset shell, delete config"
+  echo "  all       Run full installation process (deps + install + config)"
+  echo "  deps      Install system packages and set Zsh as shell"
+  echo "  install   Install Oh My Zsh and Starship"
+  echo "  config    Configure plugins and Starship in .zshrc"
+  echo "  clean     Remove all Zsh-related config and reset shell"
 }
 
 # === Entry Point ===
 case "$1" in
   all)
+    install_dependencies
     install_zsh
-    install_starship
     configure_zsh
+    ;;
+  deps)
+    install_dependencies
     ;;
   install)
     install_zsh
     ;;
   config)
-    install_starship
     configure_zsh
     ;;
   clean)
-    clean_zsh
+    cleanup
     ;;
   *)
     show_help
     ;;
 esac
+

@@ -7,6 +7,45 @@ WALLPAPER_SOURCE="$REPO_DIR/wallpapers/background.jpg"
 WALLPAPER_DEST="$HOME/Pictures/background.jpg"
 ACTION="${1:-all}"
 
+# === OS Detection ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+else
+  echo "❌ Cannot detect OS. /etc/os-release missing."
+  exit 1
+fi
+
+# === Dependencies ===
+DEPS=("gsettings" "glib2-tools")
+
+install_dependencies() {
+  echo "🔧 Checking required dependencies..."
+
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt update
+    for dep in "${DEPS[@]}"; do
+      if ! command -v "$dep" &>/dev/null; then
+        echo "📦 Installing $dep..."
+        sudo apt install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+
+  elif [[ "$ID" == "fedora" ]]; then
+    # gsettings comes from glib2-tools
+    if ! command -v gsettings &>/dev/null; then
+      echo "📦 Installing glib2-tools (for gsettings)..."
+      sudo dnf install -y glib2-tools
+    else
+      echo "✅ gsettings is already installed."
+    fi
+  else
+    echo "❌ Unsupported OS: $ID"
+    exit 1
+  fi
+}
+
 install_config() {
   echo "📁 Checking for wallpaper in: $WALLPAPER_SOURCE"
 
@@ -24,14 +63,9 @@ install_config() {
 config_gnome() {
   echo "🎨 Configuring GNOME settings..."
 
-  # Set wallpaper (dark and light)
   gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_DEST"
   gsettings set org.gnome.desktop.background picture-uri-dark "file://$WALLPAPER_DEST"
-
-  # Enable dark mode
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-
-  # Set control buttons layout
   gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
 
   echo "✅ GNOME configuration applied."
@@ -41,7 +75,7 @@ clean_config() {
   echo "🧹 Resetting GNOME settings..."
 
   gsettings reset org.gnome.desktop.background picture-uri
-  gsettings reset org.gnome.desktop.background.picture-uri-dark
+  gsettings reset org.gnome.desktop.background picture-uri-dark
   gsettings reset org.gnome.desktop.interface color-scheme
   gsettings reset org.gnome.desktop.wm.preferences button-layout
 
@@ -53,8 +87,26 @@ clean_config() {
   echo "✅ GNOME settings reset."
 }
 
+show_help() {
+  echo "Usage: $0 {all|deps|install|config|clean}"
+  echo ""
+  echo "  all      Run deps + install + config"
+  echo "  deps     Install required tools"
+  echo "  install  Copy wallpaper"
+  echo "  config   Apply GNOME settings"
+  echo "  clean    Reset GNOME settings and remove wallpaper"
+}
+
 # === Entry point ===
 case "$ACTION" in
+  all)
+    install_dependencies
+    install_config
+    config_gnome
+    ;;
+  deps)
+    install_dependencies
+    ;;
   install)
     install_config
     ;;
@@ -64,12 +116,8 @@ case "$ACTION" in
   clean)
     clean_config
     ;;
-  all)
-    install_config
-    config_gnome
-    ;;
   *)
-    echo "Usage: $0 {install|config|clean|all}"
+    show_help
     exit 1
     ;;
 esac

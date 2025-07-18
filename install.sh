@@ -57,7 +57,7 @@ clear
 # === GNOME or terminal path ===
 if command -v gnome-shell &>/dev/null; then
   gum log --level info "GNOME desktop detected. Including full desktop environment setup."
-  
+
   "$SCRIPT_DIR/install-desktop.sh" "$ACTION"
   DESKTOP_STATUS=$?
 else
@@ -67,7 +67,7 @@ else
 fi
 
 if [[ $DESKTOP_STATUS -eq 0 ]]; then
-  gum log --level success "✅ Installation completed successfully."
+  gum log --level info "✅ Installation completed successfully."
   if command -v gnome-shell &>/dev/null; then
     gum log --level info "🔁 Please log out and back in to apply all GNOME desktop changes."
   fi
@@ -75,4 +75,3 @@ else
   gum log --level error "❌ Setup failed during installation."
   exit $DESKTOP_STATUS
 fi
-
