@@ -23,7 +23,6 @@ install_dependencies() {
   echo "🔧 Checking required dependencies..."
 
   if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-    sudo apt update
     for dep in "${DEPS[@]}"; do
       if ! command -v "$dep" &>/dev/null; then
         echo "📦 Installing $dep..."
