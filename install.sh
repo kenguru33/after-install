@@ -8,6 +8,9 @@ MODULES="$SCRIPT_DIR/modules"
 
 clear
 
+# === Make sure system is updated ===
+$MODULES/system-update.sh install
+
 # === Run the banner if available ===
 if [[ -x "$MODULES/banner.sh" ]]; then
   "$MODULES/banner.sh"
