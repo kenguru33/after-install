@@ -6,10 +6,10 @@ trap 'gum log --level error "❌ An error occurred. Exiting."' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 
-clear
-
 # === Make sure system is updated ===
 $MODULES/system-update.sh install
+
+clear
 
 # === Run the banner if available ===
 if [[ -x "$MODULES/banner.sh" ]]; then
