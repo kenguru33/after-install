@@ -71,8 +71,8 @@ install_dependencies() {
       if ! command -v gum &>/dev/null; then
         #curl -fsSL -o /tmp/gum.rpm "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_x86_64.rpm"
         #sudo dnf install -y /tmp/gum.rpm
-        sudo #rm -f /tmp/gum.rpm
-        dnf install -y gum
+        #rm -f /tmp/gum.rpm
+        sudo dnf install -y gum
       fi
       ;;
     *)
