@@ -5,6 +5,47 @@ MODULE_NAME="git"
 CONFIG_FILE="$HOME/.config/after-install/userinfo.config"
 ACTION="${1:-all}"
 
+# === OS Detection ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+else
+  echo "❌ Cannot detect OS. /etc/os-release missing."
+  exit 1
+fi
+
+# === Dependencies ===
+DEPS=("git")
+
+install_dependencies() {
+  echo "🔧 Checking required dependencies..."
+
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt update -y
+    for dep in "${DEPS[@]}"; do
+      if ! dpkg -l | grep -qw "$dep"; then
+        echo "📦 Installing $dep..."
+        sudo apt install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+
+  elif [[ "$ID" == "fedora" ]]; then
+    for dep in "${DEPS[@]}"; do
+      if ! rpm -q "$dep" &>/dev/null; then
+        echo "📦 Installing $dep..."
+        sudo dnf install -y "$dep"
+      else
+        echo "✅ $dep is already installed."
+      fi
+    done
+
+  else
+    echo "❌ Unsupported OS: $ID"
+    exit 1
+  fi
+}
+
 # === Load user config ===
 load_user_config() {
   if [[ ! -f "$CONFIG_FILE" ]]; then
@@ -23,10 +64,13 @@ load_user_config() {
 
 # === Git Installation ===
 install_git_package() {
-  echo "📦 Installing Git..."
-  sudo apt update -y &>/dev/null
-  sudo apt install -y git &>/dev/null
-  echo "✅ Git installed"
+  echo "📦 Ensuring Git is installed..."
+
+  if ! command -v git &>/dev/null; then
+    install_dependencies
+  else
+    echo "✅ Git is already installed."
+  fi
 }
 
 # === Git Configuration ===
@@ -64,9 +108,10 @@ clean_git() {
 
 # === Help ===
 show_help() {
-  echo "Usage: $0 [all|install|config|clean]"
+  echo "Usage: $0 [all|deps|install|config|clean]"
   echo ""
   echo "  all      Install and configure Git"
+  echo "  deps     Install required dependencies"
   echo "  install  Only install Git"
   echo "  config   Only configure Git"
   echo "  clean    Remove Git global config"
@@ -78,6 +123,9 @@ case "$ACTION" in
     load_user_config
     install_git_package
     configure_git
+    ;;
+  deps)
+    install_dependencies
     ;;
   install)
     install_git_package
