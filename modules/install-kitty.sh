@@ -2,19 +2,44 @@
 set -e
 trap 'echo "❌ Something went wrong. Exiting." >&2' ERR
 
+MODULE_NAME="kitty"
 CONFIG_DIR="$HOME/.config/kitty"
 FONT_NAME="Hack Nerd Font Mono"
+ACTION="${1:-all}"
+
+# === Detect OS ===
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+  OS_ID="$ID"
+else
+  echo "❌ Could not detect OS."
+  exit 1
+fi
+
+# === Dependencies ===
+DEPS_DEBIAN=(kitty)
+DEPS_FEDORA=(kitty)
+
+install_deps() {
+  echo "📦 Installing dependencies for $OS_ID..."
+  if [[ "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
+    sudo apt update
+    sudo apt install -y "${DEPS_DEBIAN[@]}"
+  elif [[ "$OS_ID" == "fedora" ]]; then
+    sudo dnf install -y "${DEPS_FEDORA[@]}"
+  else
+    echo "❌ Unsupported OS: $OS_ID"
+    exit 1
+  fi
+}
 
 install_kitty() {
-  echo "🐱 Installing Kitty terminal via apt..."
-
+  echo "🐱 Installing Kitty terminal..."
   if command -v kitty &>/dev/null; then
     echo "✅ Kitty is already installed."
     return
   fi
-
-  sudo apt update
-  sudo apt install -y kitty
+  install_deps
   echo "✅ Kitty installed."
 }
 
@@ -47,7 +72,6 @@ scrollback_lines     10000
 repaint_delay        10
 input_delay          2
 sync_to_monitor      yes
-
 
 # Titlebar and tab titles show path only (with ~ for home)
 window_title_format "{shrink_path(cwd)}"
@@ -94,40 +118,23 @@ mark3_foreground #1e1e2e
 mark3_background #74c7ec
 
 # 16 terminal colors
-
-# black
 color0  #45475a
 color8  #585b70
-
-# red
 color1  #f38ba8
 color9  #f38ba8
-
-# green
 color2  #a6e3a1
 color10 #a6e3a1
-
-# yellow
 color3  #f9e2af
 color11 #f9e2af
-
-# blue
 color4  #89b4fa
 color12 #89b4fa
-
-# magenta
 color5  #f5c2e7
 color13 #f5c2e7
-
-# cyan
 color6  #94e2d5
 color14 #94e2d5
-
-# white
 color7  #bac2de
 color15 #a6adc8
 
-# Background and foreground
 background #1e1e2e
 foreground #cdd6f4
 EOF
@@ -135,32 +142,24 @@ EOF
   echo "✅ Kitty configuration written to $CONFIG_DIR/kitty.conf"
 }
 
-
 clean_kitty() {
   echo "🧹 Removing Kitty config..."
   rm -rf "$CONFIG_DIR"
   echo "✅ Kitty config removed."
 
   echo "🧽 Uninstalling Kitty..."
-  sudo apt remove --purge -y kitty || true
-  sudo apt autoremove -y
+  if [[ "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
+    sudo apt remove --purge -y kitty || true
+    sudo apt autoremove -y
+  elif [[ "$OS_ID" == "fedora" ]]; then
+    sudo dnf remove -y kitty || true
+  fi
   echo "✅ Kitty uninstalled."
 }
 
-show_help() {
-  echo "Usage: $0 [all|install|config|clean]"
-  echo ""
-  echo "  all      Install Kitty and apply config"
-  echo "  install  Install Kitty using apt"
-  echo "  config   Create Kitty config (requires Hack Nerd Font)"
-  echo "  clean    Remove Kitty config and uninstall"
-}
-
-case "$1" in
-  all)
-    install_kitty
-    check_font_installed
-    configure_kitty
+case "$ACTION" in
+  deps)
+    install_deps
     ;;
   install)
     install_kitty
@@ -172,7 +171,13 @@ case "$1" in
   clean)
     clean_kitty
     ;;
+  all)
+    install_kitty
+    check_font_installed
+    configure_kitty
+    ;;
   *)
-    show_help
+    echo "Usage: $0 [deps|install|config|clean|all]"
+    exit 1
     ;;
 esac
