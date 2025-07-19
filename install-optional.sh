@@ -47,7 +47,7 @@ declare -A MODULES_GNOME=(
   [kitty]="command -v kitty"
   [lens]="command -v lens"
   [jetbrains-toolbox]="command -v jetbrains-toolbox"
-  [firefox-pwa]="command -v firefox-pwa"
+  [firefox-pwa]="command -v firefoxpwa"
   [blackbox-terminal]="command -v blackbox-terminal"
 )
 
