@@ -21,7 +21,7 @@ if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
   INSTALL_CMD="sudo apt install -y"
   UPDATE_CMD="sudo apt update"
 elif [[ "$ID" == "fedora" ]]; then
-  DEPS=(glib2-tools gsettings)
+  DEPS=(glib2 gsettings)
   INSTALL_CMD="sudo dnf install -y"
   UPDATE_CMD="sudo dnf check-update || true"
 else
