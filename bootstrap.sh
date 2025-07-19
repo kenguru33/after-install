@@ -5,8 +5,39 @@ trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 SCRIPT_NAME="bootstrap.sh"
 REPO_DIR="$HOME/.after-install"
 REAL_USER="$(logname 2>/dev/null || echo "$USER")"
-ACTION="${1:-all}"
+ACTION="all"
+VERBOSE=0
 GUM_VERSION="0.14.3"
+
+# === Parse arguments ===
+for arg in "$@"; do
+  case "$arg" in
+    -v|--verbose)
+      VERBOSE=1
+      ;;
+    all|deps|install)
+      ACTION="$arg"
+      ;;
+    *)
+      echo "❌ Unknown argument: $arg"
+      echo "Usage: $SCRIPT_NAME [all|deps|install] [--verbose]"
+      exit 1
+      ;;
+  esac
+done
+
+# === Verbose helper ===
+run() {
+  if [[ "$VERBOSE" -eq 1 ]]; then
+    "$@"
+  else
+    "$@" >/dev/null 2>&1
+  fi
+}
+
+if [[ "$VERBOSE" -eq 1 ]]; then
+  echo "🔍 Verbose mode enabled"
+fi
 
 # === Detect OS ===
 if [[ -f /etc/os-release ]]; then
@@ -34,20 +65,6 @@ if ! sudo -v >/dev/null 2>&1; then
   exit 1
 fi
 
-# === Re-download self if not run as a file ===
-if [[ ! -f "${BASH_SOURCE[0]}" ]]; then
-  tmp="/tmp/bootstrap.sh"
-  echo "⚙️ Re-downloading bootstrap script..."
-  if command -v curl &>/dev/null; then
-    curl -fsSL "https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh" -o "$tmp"
-  else
-    wget -qO "$tmp" "https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh"
-  fi
-  chmod +x "$tmp"
-  clear
-  exec bash "$tmp" "$@"
-fi
-
 clear
 
 # === DEPS: install essential tools ===
@@ -56,23 +73,20 @@ install_dependencies() {
 
   case "$OS_ID" in
     debian|ubuntu)
-      sudo apt update -qq
-      sudo apt install -y curl wget git figlet gnupg2 apt-transport-https
+      run sudo apt update
+      run sudo apt install -y curl wget git figlet gnupg2 apt-transport-https
 
       if ! command -v gum &>/dev/null; then
-        wget -qO /tmp/gum.deb "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_amd64.deb"
-        sudo apt install -y /tmp/gum.deb
+        run wget -O /tmp/gum.deb "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_amd64.deb"
+        run sudo apt install -y /tmp/gum.deb
         rm -f /tmp/gum.deb
       fi
       ;;
     fedora)
-      sudo dnf install -y curl wget git figlet gnupg2 dnf-plugins-core
+      run sudo dnf install -y curl wget git figlet gnupg2 dnf-plugins-core
 
       if ! command -v gum &>/dev/null; then
-        #curl -fsSL -o /tmp/gum.rpm "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_x86_64.rpm"
-        #sudo dnf install -y /tmp/gum.rpm
-        #rm -f /tmp/gum.rpm
-        sudo dnf install -y gum
+        run sudo dnf install -y gum
       fi
       ;;
     *)
@@ -89,9 +103,9 @@ install_repo() {
   echo "📥 Cloning or updating after-install repo..."
 
   if [[ -d "$REPO_DIR" ]]; then
-    git -C "$REPO_DIR" pull --quiet
+    run git -C "$REPO_DIR" pull
   else
-    git clone --quiet https://github.com/kenguru33/after-install.git "$REPO_DIR"
+    run git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
   fi
 }
 
@@ -118,13 +132,9 @@ case "$ACTION" in
     install_repo
     run_installer
     ;;
-  all|"")
+  all)
     install_dependencies
     install_repo
     run_installer
-    ;;
-  *)
-    echo "Usage: $SCRIPT_NAME [all|deps|install]"
-    exit 1
     ;;
 esac
