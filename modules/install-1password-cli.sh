@@ -66,27 +66,26 @@ install_cli() {
     sudo apt install -y 1password-cli
 
   elif [[ "$OS_ID" == "fedora" ]]; then
-    echo "🔑 Importing RPM key and setting up DNF repo..."
-    sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
+  echo "🔑 Importing RPM key and setting up DNF repo..."
 
-    sudo tee "$DNF_REPO_FILE" > /dev/null <<EOF
+  # Download key and store locally
+  sudo mkdir -p /etc/pki/rpm-gpg
+  curl -fsSL https://downloads.1password.com/linux/keys/1password.asc -o /etc/pki/rpm-gpg/1password.asc
+
+  sudo tee "$DNF_REPO_FILE" > /dev/null <<EOF
 [1password]
 name=1Password Stable Channel
 baseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://downloads.1password.com/linux/keys/1password.asc
+gpgkey=file:///etc/pki/rpm-gpg/1password.asc
 EOF
 
-    echo "📦 Installing via DNF (non-interactive)..."
-    sudo dnf check-update || true
-    sudo dnf install -y --assumeyes 1password-cli
+  echo "📦 Installing via DNF (non-interactive)..."
+  sudo dnf check-update || true
+  sudo dnf install -y --assumeyes 1password-cli
 
-  else
-    echo "❌ Unsupported OS: $OS_ID"
-    exit 1
-  fi
 
   echo "✅ 1Password CLI installed."
 }
