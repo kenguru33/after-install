@@ -13,15 +13,15 @@ else
   exit 1
 fi
 
-# === Step 1: Dependencies (optional) ===
+# === Step 1: Dependencies ===
 install_dependencies() {
-  echo "🔧 Installing required tools..."
+  echo "🔧 Installing curl..."
 
   if command -v apt &>/dev/null; then
     sudo apt update -qq
-    sudo apt install -y curl
+    sudo apt install -y curl gnupg
   elif command -v dnf &>/dev/null; then
-    sudo dnf install -y curl
+    sudo dnf install -y curl gpg
   else
     echo "❌ Unsupported package manager."
     exit 1
@@ -30,7 +30,43 @@ install_dependencies() {
   echo "✅ Dependencies installed."
 }
 
-# === Step 2: Install ===
+# === Step 2: Add repo and key (Debian & Fedora) ===
+add_repo_and_key() {
+  echo "➕ Adding Microsoft repo and GPG key..."
+
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo install -d /etc/apt/keyrings
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | \
+      gpg --dearmor | sudo tee /etc/apt/keyrings/microsoft.gpg > /dev/null
+
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | \
+      sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+
+    sudo apt update -qq
+
+  elif [[ "$ID" == "fedora" || "$ID_LIKE" == *"fedora"* ]]; then
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | \
+      sudo tee /etc/pki/rpm-gpg/Microsoft.asc > /dev/null
+
+    sudo tee /etc/yum.repos.d/vscode.repo > /dev/null <<EOF
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/Microsoft.asc
+EOF
+
+    sudo dnf check-update || true
+  else
+    echo "❌ Unsupported OS: $ID"
+    exit 1
+  fi
+
+  echo "✅ Repository and GPG key added."
+}
+
+# === Step 3: Install ===
 install_vscode() {
   echo "🖥️ Installing VS Code..."
 
@@ -53,7 +89,7 @@ install_vscode() {
   echo "✅ VS Code installed."
 }
 
-# === Step 3: Clean ===
+# === Step 4: Clean ===
 cleanup() {
   echo "🧹 Cleaning up VS Code..."
 
@@ -62,8 +98,12 @@ cleanup() {
   if command -v code &>/dev/null; then
     if command -v apt &>/dev/null; then
       sudo apt remove --purge -y code
+      sudo rm -f /etc/apt/sources.list.d/vscode.list
+      sudo rm -f /etc/apt/keyrings/microsoft.gpg
     elif command -v dnf &>/dev/null; then
       sudo dnf remove -y code
+      sudo rm -f /etc/yum.repos.d/vscode.repo
+      sudo rm -f /etc/pki/rpm-gpg/Microsoft.asc
     fi
   fi
 
@@ -74,22 +114,24 @@ cleanup() {
 show_help() {
   echo "Usage: $0 [all|deps|install|clean]"
   echo ""
-  echo "  all       Install dependencies and VS Code"
-  echo "  deps      Install curl (if missing)"
-  echo "  install   Download and install VS Code"
-  echo "  clean     Remove VS Code and any temp files"
+  echo "  all       Install dependencies + repo + VS Code"
+  echo "  deps      Install curl and gpg"
+  echo "  install   Add repo + download + install VS Code"
+  echo "  clean     Remove VS Code and Microsoft repo/key"
 }
 
 # === Entry Point ===
 case "$ACTION" in
   all)
     install_dependencies
+    add_repo_and_key
     install_vscode
     ;;
   deps)
     install_dependencies
     ;;
   install)
+    add_repo_and_key
     install_vscode
     ;;
   clean)
