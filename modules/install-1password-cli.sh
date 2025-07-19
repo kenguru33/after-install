@@ -10,6 +10,7 @@ POLICY_FILE="$POLICY_DIR/1password.pol"
 KEYRING_DIR="/usr/share/debsig/keyrings/AC2D62742012EA22"
 DEBSIG_KEY="$KEYRING_DIR/debsig.gpg"
 DNF_REPO_FILE="/etc/yum.repos.d/1password.repo"
+FEDORA_GPG_PATH="/etc/pki/rpm-gpg/1password.asc"
 ACTION="${1:-all}"
 
 # Detect OS
@@ -61,31 +62,33 @@ install_cli() {
     curl -sS https://downloads.1password.com/linux/keys/1password.asc |
       gpg --dearmor | sudo tee "$DEBSIG_KEY" > /dev/null
 
-    echo "📦 Installing via APT (non-interactive)..."
+    echo "📦 Installing via APT..."
     sudo apt update
     sudo apt install -y 1password-cli
 
   elif [[ "$OS_ID" == "fedora" ]]; then
-  echo "🔑 Importing RPM key and setting up DNF repo..."
+    echo "🔑 Importing RPM key and setting up DNF repo..."
+    sudo mkdir -p /etc/pki/rpm-gpg
+    curl -fsSL https://downloads.1password.com/linux/keys/1password.asc -o "$FEDORA_GPG_PATH"
 
-  # Download key and store locally
-  sudo mkdir -p /etc/pki/rpm-gpg
-  curl -fsSL https://downloads.1password.com/linux/keys/1password.asc -o /etc/pki/rpm-gpg/1password.asc
-
-  sudo tee "$DNF_REPO_FILE" > /dev/null <<EOF
+    sudo tee "$DNF_REPO_FILE" > /dev/null <<EOF
 [1password]
 name=1Password Stable Channel
 baseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/1password.asc
+gpgkey=file://$FEDORA_GPG_PATH
 EOF
 
-  echo "📦 Installing via DNF (non-interactive)..."
-  sudo dnf check-update || true
-  sudo dnf install -y --assumeyes 1password-cli
+    echo "📦 Installing via DNF..."
+    sudo dnf check-update || true
+    sudo dnf install -y --assumeyes 1password-cli
 
+  else
+    echo "❌ Unsupported OS: $OS_ID"
+    exit 1
+  fi
 
   echo "✅ 1Password CLI installed."
 }
@@ -102,6 +105,7 @@ clean_cli() {
   elif [[ "$OS_ID" == "fedora" ]]; then
     sudo dnf remove -y --assumeyes 1password-cli
     sudo rm -f "$DNF_REPO_FILE"
+    sudo rm -f "$FEDORA_GPG_PATH"
   fi
 
   echo "✅ 1Password CLI removed."
