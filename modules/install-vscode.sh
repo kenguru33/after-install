@@ -109,10 +109,12 @@ cleanup() {
   echo "🧹 Cleaning up..."
 
   if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt remove -y code
     sudo rm -f /etc/apt/sources.list.d/vscode.list
     sudo rm -f /usr/share/keyrings/vscode.gpg
     echo "🗑️ Removed APT repo and GPG key."
   elif [[ "$ID" == "fedora" ]]; then
+    sudo dnf remove -y code
     sudo rm -f /etc/yum.repos.d/vscode.repo
     sudo rm -f /etc/pki/rpm-gpg/Microsoft.asc
     echo "🗑️ Removed DNF repo and GPG key."
