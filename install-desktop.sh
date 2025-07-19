@@ -41,28 +41,28 @@ run_with_spinner() {
 
 case "$ACTION" in
   all)
+    run_with_spinner "Installing user profile image..." "$MODULES/install-gravatar.sh all"
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh all"
     run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus-icon-theme.sh all"
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh all"
-    run_with_spinner "Installing user profile image..." "$MODULES/install-gravatar.sh all"
     ;;
   install)
+    run_with_spinner "Installing user profile image..." "$MODULES/install-gravatar.sh install"
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh install"
     run_with_spinner "Installing icon theme..." "$MODULES/install-papirus-icon-theme.sh install"
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh install"
-    run_with_spinner "Installing user profile image..." "$MODULES/install-gravatar.sh install"
     ;;
   config)
+    run_with_spinner "Cleaning user profile image..." "$MODULES/install-gravatar.sh config"
     run_with_spinner "Configuring GNOME..." "$MODULES/install-gnome-config.sh config"
     run_with_spinner "Configuring icon theme..." "$MODULES/install-papirus-icon-theme.sh config"
     run_with_spinner "Configuring GNOME extensions..." "$MODULES/install-gnome-extensions.sh config"
-    run_with_spinner "Configuring user profile image..." "$MODULES/install-gravatar.sh config"
     ;;
   clean)
+    run_with_spinner "Cleaning user profile image..." "$MODULES/install-gravatar.sh clean"
     run_with_spinner "Cleaning GNOME config..." "$MODULES/install-gnome-config.sh clean"
     run_with_spinner "Cleaning icon theme..." "$MODULES/install-papirus-icon-theme.sh clean"
     run_with_spinner "Cleaning GNOME extensions..." "$MODULES/install-gnome-extensions.sh clean"
-    run_with_spinner "Cleaning user profile image..." "$MODULES/install-gravatar.sh clean"
     ;;
   *)
     echo "Usage: $0 [--verbose|--quiet] [all|install|config|clean]"
