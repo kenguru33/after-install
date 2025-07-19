@@ -69,7 +69,7 @@ install_cli() {
   elif [[ "$OS_ID" == "fedora" ]]; then
     echo "🔑 Importing RPM key and setting up DNF repo..."
     sudo mkdir -p /etc/pki/rpm-gpg
-    curl -fsSL https://downloads.1password.com/linux/keys/1password.asc -o "$FEDORA_GPG_PATH"
+    curl -fsSL https://downloads.1password.com/linux/keys/1password.asc | sudo tee "$FEDORA_GPG_PATH" > /dev/null
 
     sudo tee "$DNF_REPO_FILE" > /dev/null <<EOF
 [1password]
