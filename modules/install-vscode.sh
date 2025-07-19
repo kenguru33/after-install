@@ -1,8 +1,13 @@
 #!/bin/bash
 set -e
+trap 'echo "ERROR ❌ An error occurred. Exiting." >&2' ERR
+
+MODULE_NAME="vscode"
+ACTION="${1:-all}"
 
 # === Config ===
-DEPS=("curl" "gpg")
+DEPS_DEBIAN=("curl" "gnupg" "apt-transport-https")
+DEPS_FEDORA=("curl" "gnupg")
 
 # === Detect OS ===
 if [[ -f /etc/os-release ]]; then
@@ -12,41 +17,27 @@ else
   exit 1
 fi
 
-# === Step 1: Install dependencies and add Microsoft repo ===
 install_dependencies() {
-  echo "🔧 Installing required dependencies..."
+  echo "🔧 Installing dependencies and adding Microsoft repo..."
 
   if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
     sudo apt update -qq
-    for dep in "${DEPS[@]}"; do
-      if ! dpkg -l | grep -qw "$dep"; then
-        echo "📦 Installing $dep..."
-        sudo apt install -y "$dep"
-      else
-        echo "✅ $dep is already installed."
-      fi
-    done
+    sudo apt install -y "${DEPS_DEBIAN[@]}"
 
     echo "🔐 Adding Microsoft GPG key..."
-    curl -sSL https://packages.microsoft.com/keys/microsoft.asc | \
+    sudo install -d /etc/apt/keyrings
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | \
       gpg --dearmor | \
-      sudo tee /usr/share/keyrings/vscode.gpg > /dev/null
+      sudo tee /etc/apt/keyrings/microsoft.gpg > /dev/null
 
     echo "📦 Adding VS Code APT repo..."
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/vscode.gpg] https://packages.microsoft.com/repos/vscode stable main" | \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | \
       sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
 
     sudo apt update -qq
 
   elif [[ "$ID" == "fedora" ]]; then
-    for dep in "${DEPS[@]}"; do
-      if ! rpm -q "$dep" &>/dev/null; then
-        echo "📦 Installing $dep..."
-        sudo dnf install -y "$dep"
-      else
-        echo "✅ $dep is already installed."
-      fi
-    done
+    sudo dnf install -y "${DEPS_FEDORA[@]}"
 
     echo "🔐 Adding Microsoft GPG key..."
     curl -sSL https://packages.microsoft.com/keys/microsoft.asc | \
@@ -70,48 +61,31 @@ EOF
   fi
 }
 
-# === Step 2: Install VS Code ===
 install_vscode() {
   echo "🖥️ Installing VS Code..."
 
   if command -v code >/dev/null 2>&1; then
     echo "✅ VS Code is already installed."
+    return
+  fi
+
+  if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    sudo apt install -y code
+  elif [[ "$ID" == "fedora" ]]; then
+    sudo dnf install -y code
   else
-    if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-      sudo apt install -y code
-    elif [[ "$ID" == "fedora" ]]; then
-      sudo dnf install -y code
-    else
-      echo "❌ Unsupported OS: $ID"
-      exit 1
-    fi
+    echo "❌ Unsupported OS: $ID"
+    exit 1
   fi
 }
 
-# === Step 3: Apply minimal config (optional settings only) ===
-configure_vscode() {
-  echo "⚙️ Configuring VS Code settings..."
-
-  mkdir -p "$HOME/.config/Code/User"
-  cat > "$HOME/.config/Code/User/settings.json" <<EOF
-{
-  "editor.tabSize": 2,
-  "editor.formatOnSave": true,
-  "files.autoSave": "onFocusChange"
-}
-EOF
-
-  echo "✅ VS Code configured."
-}
-
-# === Step 4: Cleanup ===
 cleanup() {
-  echo "🧹 Cleaning up..."
+  echo "🧹 Cleaning up VS Code..."
 
   if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-    sudo apt remove -y code
+    sudo apt remove --purge -y code
     sudo rm -f /etc/apt/sources.list.d/vscode.list
-    sudo rm -f /usr/share/keyrings/vscode.gpg
+    sudo rm -f /etc/apt/keyrings/microsoft.gpg
     echo "🗑️ Removed APT repo and GPG key."
   elif [[ "$ID" == "fedora" ]]; then
     sudo dnf remove -y code
@@ -119,36 +93,27 @@ cleanup() {
     sudo rm -f /etc/pki/rpm-gpg/Microsoft.asc
     echo "🗑️ Removed DNF repo and GPG key."
   fi
-
-  echo "✅ Cleanup complete."
 }
 
-# === Help ===
 show_help() {
-  echo "Usage: $0 [all|deps|install|config|clean]"
+  echo "Usage: $0 [all|deps|install|clean]"
   echo ""
-  echo "  all       Run full VS Code setup (deps + install + config)"
+  echo "  all       Run full VS Code setup (deps + install)"
   echo "  deps      Install dependencies and add Microsoft repo"
   echo "  install   Install the VS Code package"
-  echo "  config    Apply basic settings (no extensions)"
-  echo "  clean     Remove VS Code repo and GPG key"
+  echo "  clean     Remove repo, GPG key, and uninstall VS Code"
 }
 
-# === Entry Point ===
-case "$1" in
+case "$ACTION" in
   all)
     install_dependencies
     install_vscode
-    configure_vscode
     ;;
   deps)
     install_dependencies
     ;;
   install)
     install_vscode
-    ;;
-  config)
-    configure_vscode
     ;;
   clean)
     cleanup
