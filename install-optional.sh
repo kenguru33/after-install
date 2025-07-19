@@ -48,7 +48,7 @@ declare -A MODULES_GNOME=(
   [lens]="command -v lens"
   [jetbrains-toolbox]="command -v jetbrains-toolbox"
   [firefox-pwa]="command -v firefox"
-  [blackbox-terminal]="command -v blackbox"
+  [blackbox-terminal]="command -v blackbox-terminal"
 )
 
 # === Merge into final MODULES ===
