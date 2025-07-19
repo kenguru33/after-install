@@ -4,7 +4,7 @@ set -e
 # === Config ===
 DEPS=("curl" "gpg")
 
-# Detect OS
+# === Detect OS ===
 if [[ -f /etc/os-release ]]; then
   . /etc/os-release
 else
@@ -17,7 +17,7 @@ install_dependencies() {
   echo "🔧 Installing required dependencies..."
 
   if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-    sudo apt update
+    sudo apt update -qq
     for dep in "${DEPS[@]}"; do
       if ! dpkg -l | grep -qw "$dep"; then
         echo "📦 Installing $dep..."
@@ -36,7 +36,7 @@ install_dependencies() {
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/vscode.gpg] https://packages.microsoft.com/repos/vscode stable main" | \
       sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
 
-    sudo apt update
+    sudo apt update -qq
 
   elif [[ "$ID" == "fedora" ]]; then
     for dep in "${DEPS[@]}"; do
@@ -50,7 +50,6 @@ install_dependencies() {
 
     echo "🔐 Adding Microsoft GPG key..."
     curl -sSL https://packages.microsoft.com/keys/microsoft.asc | \
-      gpg --dearmor | \
       sudo tee /etc/pki/rpm-gpg/Microsoft.asc > /dev/null
 
     echo "📦 Adding VS Code DNF repo..."
@@ -60,7 +59,7 @@ name=Visual Studio Code
 baseurl=https://packages.microsoft.com/yumrepos/vscode
 enabled=1
 gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+gpgkey=file:///etc/pki/rpm-gpg/Microsoft.asc
 EOF
 
     sudo dnf check-update || true
@@ -156,4 +155,3 @@ case "$1" in
     show_help
     ;;
 esac
-
