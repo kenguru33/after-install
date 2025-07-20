@@ -73,7 +73,7 @@ run_installer_for() {
     return
   fi
 
-  local cmd=(bash "$script" install "${FLAGS[@]}")
+  local cmd=(bash "$script" all "${FLAGS[@]}")
 
   if [[ "$SHOW_OUTPUT" == "1" ]]; then
     echo "▶️ Installing $name..."
