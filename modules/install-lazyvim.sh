@@ -58,8 +58,24 @@ install_lazyvim() {
 
 # === Step: config ===
 config_lazyvim() {
-  echo "⚙️ No additional LazyVim config applied (starter handles it)."
+  echo "🎨 Adding Catppuccin theme plugin..."
+
+  mkdir -p ~/.config/nvim/lua/plugins
+
+  cat > ~/.config/nvim/lua/plugins/catppuccin.lua <<'EOF'
+return {
+  "catppuccin/nvim",
+  name = "catppuccin",
+  priority = 1000,
+  config = function()
+    vim.cmd.colorscheme("catppuccin")
+  end,
 }
+EOF
+
+  echo "✅ Catppuccin plugin added and set as default colorscheme."
+}
+
 
 # === Step: clean ===
 clean_lazyvim() {
