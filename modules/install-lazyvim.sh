@@ -1,158 +1,87 @@
 #!/bin/bash
 set -e
+trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
-MODULE_NAME="neovim"
-CONFIG_DIR="$HOME/.config/nvim"
-BACKUP_DIR="$HOME/.config/nvim.bak"
-ACTION="${1:-all}"
+ACTION="${1:-install}"
+timestamp="$(date +%Y%m%d%H%M%S)"
 
 # === OS Detection ===
-if [ -f /etc/os-release ]; then
+if [[ -f /etc/os-release ]]; then
   . /etc/os-release
   OS_ID="$ID"
 else
-  echo "❌ Cannot detect operating system."
+  echo "❌ Cannot detect OS."
   exit 1
 fi
 
 install_deps() {
-  echo "📦 Installing Neovim + build dependencies..."
-
+  echo "📦 Installing Neovim and related tools..."
   case "$OS_ID" in
     debian | ubuntu)
-      DEPS=(
-        neovim git curl unzip build-essential
-        ripgrep fd-find fzf
-        pkg-config ninja-build libtool autoconf automake gdb
-      )
       sudo apt update
-      sudo apt install -y "${DEPS[@]}"
+      sudo apt install -y neovim git curl unzip ripgrep fd-find fzf
       ;;
     fedora)
-      DEPS=(
-        neovim git curl unzip
-        ripgrep fd-find fzf
-        pkgconf-pkg-config ninja-build libtool autoconf automake gdb make
-      )
-      sudo dnf install -y "${DEPS[@]}"
+      sudo dnf install -y neovim git curl unzip ripgrep fd-find fzf
       ;;
     *)
       echo "❌ Unsupported OS: $OS_ID"
       exit 1
       ;;
   esac
-
-  echo "✅ Dependencies installed."
 }
 
-config_lazyvim() {
-  echo "⚙️ Configuring LazyVim..."
+backup_and_clone_lazyvim() {
+  echo "📁 Backing up any existing Neovim config..."
 
-  if [[ -d "$CONFIG_DIR" && ! -L "$CONFIG_DIR" ]]; then
-    echo "🔄 Backing up existing config to $BACKUP_DIR"
-    if [[ -d "$BACKUP_DIR" ]]; then
-      BACKUP_DIR="$HOME/.config/nvim.bak_$(date +%Y%m%d%H%M%S)"
-      echo "⚠️ Backup folder already exists. Creating: $BACKUP_DIR"
+  for dir in ~/.config/nvim ~/.local/share/nvim ~/.local/state/nvim ~/.cache/nvim; do
+    if [[ -e "$dir" ]]; then
+      mv "$dir" "${dir}.bak-${timestamp}"
+      echo "🔄 Moved $dir → ${dir}.bak-${timestamp}"
     fi
-    mv "$CONFIG_DIR" "$BACKUP_DIR"
+  done
+
+  echo "📥 Cloning LazyVim starter..."
+  git clone https://github.com/LazyVim/starter ~/.config/nvim
+  rm -rf ~/.config/nvim/.git
+
+  echo "✅ LazyVim is installed."
+  echo "🚀 Run 'nvim' and then :Lazy sync to complete setup."
+}
+
+clean_lazyvim() {
+  echo "🧹 Removing Neovim config and related data..."
+  rm -rf ~/.config/nvim ~/.local/share/nvim ~/.local/state/nvim ~/.cache/nvim
+  echo "✅ LazyVim removed."
+
+  echo "📦 Optionally remove Neovim and tools..."
+  read -rp "Uninstall Neovim and tools? [y/N]: " confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    case "$OS_ID" in
+      debian | ubuntu)
+        sudo apt purge -y neovim ripgrep fd-find fzf
+        sudo apt autoremove -y
+        ;;
+      fedora)
+        sudo dnf remove -y neovim ripgrep fd-find fzf
+        ;;
+    esac
+    echo "✅ Packages removed."
   fi
-
-  echo "📁 Cloning LazyVim starter..."
-  git clone https://github.com/LazyVim/starter "$CONFIG_DIR"
-  rm -rf "$CONFIG_DIR/.git"
-
-  echo "🎨 Enabling Catppuccin theme..."
-  mkdir -p "$CONFIG_DIR/lua/plugins"
-  cat > "$CONFIG_DIR/lua/plugins/init.lua" <<EOF
-return {
-  { import = "lazyvim.plugins.extras.ui.catppuccin" },
-}
-EOF
-
-  echo "🎨 Setting Catppuccin as default colorscheme..."
-  mkdir -p "$CONFIG_DIR/lua/config"
-  cat > "$CONFIG_DIR/lua/config/options.lua" <<EOF
-vim.opt.termguicolors = true
-vim.cmd.colorscheme("catppuccin")
-EOF
-
-  echo "🧠 Configuring Mason to auto-install LSPs..."
-  cat > "$CONFIG_DIR/lua/plugins/mason-lsp.lua" <<EOF
-return {
-  "williamboman/mason.nvim",
-  opts = {
-    ensure_installed = {
-      "lua-language-server",
-      "typescript-language-server",
-      "pyright",
-    },
-  },
-}
-EOF
-
-  echo "🔤 Setting Hack Nerd Font (if GUI supports)..."
-  cat > "$CONFIG_DIR/lua/config/ui.lua" <<EOF
-vim.opt.guifont = "Hack Nerd Font:h12"
-EOF
-
-  echo "🎨 Customizing dashboard header..."
-  cat > "$CONFIG_DIR/lua/plugins/dashboard-header.lua" <<'EOF'
-return {
-  "nvimdev/dashboard-nvim",
-  opts = function(_, opts)
-    opts.config.header = {
-      "      ▄▄▄▄    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒    ▄▄▄▄      ",
-      "   ▄████████▄  ▒ AFTER INSTALL ▒  ▄████████▄   ",
-      " ▄███▀░▐█▌░▀███▄▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▄███▀░▐█▌░▀███▄",
-      "████▒░▒██▒░▒████▒  Neovim+Lazy  ████▒░▒██▒░▒████",
-      "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
-    }
-  end,
-}
-EOF
-
-  echo "🎹 Adding keymap override..."
-  cat > "$CONFIG_DIR/lua/config/keymaps.lua" <<EOF
-vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Find Files" })
-EOF
-
-  echo "✅ LazyVim fully configured."
-  echo "🚀 Start Neovim and run :Lazy sync if needed."
-}
-
-clean_neovim() {
-  echo "🧹 Removing Neovim and build tools..."
-
-  case "$OS_ID" in
-    debian | ubuntu)
-      sudo apt purge -y neovim build-essential ripgrep fd-find fzf \
-        pkg-config ninja-build libtool autoconf automake gdb || true
-      sudo apt autoremove -y
-      ;;
-    fedora)
-      sudo dnf remove -y neovim ripgrep fd-find fzf \
-        pkgconf-pkg-config ninja-build libtool autoconf automake gdb make || true
-      ;;
-  esac
-
-  rm -rf "$CONFIG_DIR" "$BACKUP_DIR"
-
-  echo "✅ Clean complete."
 }
 
 # === Dispatcher ===
 case "$ACTION" in
-  deps) install_deps ;;
-  install) install_deps ;;
-  config) config_lazyvim ;;
-  clean) clean_neovim ;;
-  all)
+  install)
     install_deps
-    config_lazyvim
+    backup_and_clone_lazyvim
+    ;;
+  clean)
+    clean_lazyvim
     ;;
   *)
     echo "❌ Unknown action: $ACTION"
-    echo "Usage: $0 [all|deps|install|config|clean]"
+    echo "Usage: $0 [install|clean]"
     exit 1
     ;;
 esac
