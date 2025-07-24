@@ -3,11 +3,13 @@ set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 SCRIPT_NAME="bootstrap.sh"
+REPO_URL="https://github.com/kenguru33/after-install.git"
 REPO_DIR="$HOME/.after-install"
 REAL_USER="$(logname 2>/dev/null || echo "$USER")"
 ACTION="all"
 VERBOSE=0
 GUM_VERSION="0.14.3"
+BRANCH=""
 
 # === Parse arguments ===
 for arg in "$@"; do
@@ -18,9 +20,12 @@ for arg in "$@"; do
     all|deps|install)
       ACTION="$arg"
       ;;
+    branch=*)
+      BRANCH="${arg#branch=}"
+      ;;
     *)
       echo "❌ Unknown argument: $arg"
-      echo "Usage: $SCRIPT_NAME [all|deps|install] [--verbose]"
+      echo "Usage: $SCRIPT_NAME [all|deps|install] [--verbose] [branch=branchname]"
       exit 1
       ;;
   esac
@@ -98,14 +103,41 @@ install_dependencies() {
   echo "✅ Dependencies installed."
 }
 
+# === Prompt for branch if not passed ===
+select_branch() {
+  if [[ -n "$BRANCH" ]]; then
+    return
+  fi
+
+  echo "🌿 Fetching available branches..."
+  BRANCHES=$(git ls-remote --heads "$REPO_URL" 2>/dev/null | sed 's?.*refs/heads/??' || echo "main")
+
+  if command -v gum &>/dev/null; then
+    echo "🤔 No branch specified. Please select one:"
+    BRANCH=$(echo "$BRANCHES" | gum choose)
+  else
+    echo "⚠️ gum not found. Defaulting to 'main'."
+    BRANCH="main"
+  fi
+
+  if [[ -z "$BRANCH" ]]; then
+    echo "❌ No branch selected. Exiting."
+    exit 1
+  fi
+}
+
 # === INSTALL: clone or update repo ===
 install_repo() {
-  echo "📥 Cloning or updating after-install repo..."
+  select_branch
 
-  if [[ -d "$REPO_DIR" ]]; then
-    run git -C "$REPO_DIR" pull
+  echo "📥 Cloning or updating after-install repo (branch: $BRANCH)..."
+
+  if [[ -d "$REPO_DIR/.git" ]]; then
+    run git -C "$REPO_DIR" fetch origin
+    run git -C "$REPO_DIR" checkout "$BRANCH"
+    run git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
   else
-    run git clone https://github.com/kenguru33/after-install.git "$REPO_DIR"
+    run git clone --branch "$BRANCH" "$REPO_URL" "$REPO_DIR"
   fi
 }
 
