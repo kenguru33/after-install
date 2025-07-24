@@ -2,8 +2,10 @@
 set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
-ACTION="${1:-install}"
-timestamp="$(date +%Y%m%d%H%M%S)"
+MODULE_NAME="lazyvim"
+ACTION="${1:-all}"
+TIMESTAMP="$(date +%Y%m%d%H%M%S)"
+NVIM_DIRS=(~/.config/nvim ~/.local/share/nvim ~/.local/state/nvim ~/.cache/nvim)
 
 # === OS Detection ===
 if [[ -f /etc/os-release ]]; then
@@ -14,7 +16,8 @@ else
   exit 1
 fi
 
-install_deps() {
+# === Step: deps ===
+install_dependencies() {
   echo "📦 Installing Neovim and related tools..."
   case "$OS_ID" in
     debian | ubuntu)
@@ -29,15 +32,19 @@ install_deps() {
       exit 1
       ;;
   esac
+  echo "✅ Dependencies installed."
 }
 
-backup_and_clone_lazyvim() {
+# === Step: install ===
+install_lazyvim() {
   echo "📁 Backing up any existing Neovim config..."
 
-  for dir in ~/.config/nvim ~/.local/share/nvim ~/.local/state/nvim ~/.cache/nvim; do
-    if [[ -e "$dir" ]]; then
-      mv "$dir" "${dir}.bak-${timestamp}"
-      echo "🔄 Moved $dir → ${dir}.bak-${timestamp}"
+  for dir in "${NVIM_DIRS[@]}"; do
+    expanded_dir="$(eval echo "$dir")"
+    if [[ -e "$expanded_dir" ]]; then
+      backup="${expanded_dir}.bak-${TIMESTAMP}"
+      mv "$expanded_dir" "$backup"
+      echo "🔄 Moved $expanded_dir → $backup"
     fi
   done
 
@@ -45,17 +52,25 @@ backup_and_clone_lazyvim() {
   git clone https://github.com/LazyVim/starter ~/.config/nvim
   rm -rf ~/.config/nvim/.git
 
-  echo "✅ LazyVim is installed."
-  echo "🚀 Run 'nvim' and then :Lazy sync to complete setup."
+  echo "✅ LazyVim installed."
+  echo "🚀 Start Neovim with 'nvim' and run :Lazy sync"
 }
 
+# === Step: config ===
+config_lazyvim() {
+  echo "⚙️ No additional LazyVim config applied (starter handles it)."
+}
+
+# === Step: clean ===
 clean_lazyvim() {
-  echo "🧹 Removing Neovim config and related data..."
-  rm -rf ~/.config/nvim ~/.local/share/nvim ~/.local/state/nvim ~/.cache/nvim
-  echo "✅ LazyVim removed."
+  echo "🧹 Removing LazyVim configuration and data..."
+  for dir in "${NVIM_DIRS[@]}"; do
+    rm -rf "$(eval echo "$dir")"
+  done
+  echo "✅ LazyVim configuration removed."
 
   echo "📦 Optionally remove Neovim and tools..."
-  read -rp "Uninstall Neovim and tools? [y/N]: " confirm
+  read -rp "Uninstall Neovim and related tools? [y/N]: " confirm
   if [[ "$confirm" =~ ^[Yy]$ ]]; then
     case "$OS_ID" in
       debian | ubuntu)
@@ -70,18 +85,49 @@ clean_lazyvim() {
   fi
 }
 
+# === Step: restore ===
+restore_backup() {
+  echo "📂 Searching for latest backup to restore..."
+
+  for dir in "${NVIM_DIRS[@]}"; do
+    expanded_dir="$(eval echo "$dir")"
+    latest_backup=$(ls -d "${expanded_dir}.bak-"* 2>/dev/null | sort | tail -n1)
+    if [[ -n "$latest_backup" ]]; then
+      echo "🔁 Restoring $latest_backup → $expanded_dir"
+      rm -rf "$expanded_dir"
+      mv "$latest_backup" "$expanded_dir"
+    else
+      echo "⚠️ No backup found for $expanded_dir"
+    fi
+  done
+  echo "✅ Backup restore complete."
+}
+
 # === Dispatcher ===
 case "$ACTION" in
+  deps)
+    install_dependencies
+    ;;
   install)
-    install_deps
-    backup_and_clone_lazyvim
+    install_lazyvim
+    ;;
+  config)
+    config_lazyvim
     ;;
   clean)
     clean_lazyvim
     ;;
+  restore)
+    restore_backup
+    ;;
+  all)
+    install_dependencies
+    install_lazyvim
+    config_lazyvim
+    ;;
   *)
     echo "❌ Unknown action: $ACTION"
-    echo "Usage: $0 [install|clean]"
+    echo "Usage: $0 [all|deps|install|config|clean|restore]"
     exit 1
     ;;
 esac
