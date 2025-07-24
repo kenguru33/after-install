@@ -29,7 +29,7 @@ has_nvidia_gpu() {
 install_deps() {
   echo "🔧 Installing build dependencies..."
   sudo apt update
-  sudo apt install -y dkms linux-headers-$(uname -r) firmware-misc-nonfree software-properties-common
+  sudo apt install -y dkms linux-headers-$(uname -r) firmware-misc-nonfree
   echo "✅ Dependencies installed."
 }
 
