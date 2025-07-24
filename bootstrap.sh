@@ -9,7 +9,7 @@ REAL_USER="$(logname 2>/dev/null || echo "$USER")"
 ACTION="all"
 VERBOSE=0
 GUM_VERSION="0.14.3"
-BRANCH=""
+BRANCH="main"  # Default branch
 
 # === Parse arguments ===
 for arg in "$@"; do
@@ -42,6 +42,7 @@ run() {
 
 if [[ "$VERBOSE" -eq 1 ]]; then
   echo "🔍 Verbose mode enabled"
+  echo "🌿 Using branch: $BRANCH"
 fi
 
 # === Detect OS ===
@@ -103,33 +104,8 @@ install_dependencies() {
   echo "✅ Dependencies installed."
 }
 
-# === Prompt for branch if not passed ===
-select_branch() {
-  if [[ -n "$BRANCH" ]]; then
-    return
-  fi
-
-  echo "🌿 Fetching available branches..."
-  BRANCHES=$(git ls-remote --heads "$REPO_URL" 2>/dev/null | sed 's?.*refs/heads/??' || echo "main")
-
-  if command -v gum &>/dev/null; then
-    echo "🤔 No branch specified. Please select one:"
-    BRANCH=$(echo "$BRANCHES" | gum choose)
-  else
-    echo "⚠️ gum not found. Defaulting to 'main'."
-    BRANCH="main"
-  fi
-
-  if [[ -z "$BRANCH" ]]; then
-    echo "❌ No branch selected. Exiting."
-    exit 1
-  fi
-}
-
 # === INSTALL: clone or update repo ===
 install_repo() {
-  select_branch
-
   echo "📥 Cloning or updating after-install repo (branch: $BRANCH)..."
 
   if [[ -d "$REPO_DIR/.git" ]]; then

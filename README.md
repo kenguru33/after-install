@@ -6,22 +6,25 @@
 
 ## 📥 Install
 
-### Using `wget`
+To install After Install, simply run the following command in your terminal:
 
-```bash
-wget https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
-```
-
-### Or using `curl`
+# main branch (default)
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh)"
 ```
 
+# dev branch
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh) branch=dev
+
+```
+
 ### ❗ Important
 
-- Do **not** run this script as the `root` user  
-- Your user **must** have **sudo** privileges  
+- Do **not** run this script as the `root` user
+- Your user **must** have **sudo** privileges
 
 ---
 
@@ -29,29 +32,29 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/
 
 ### 💻 Shell & Theme
 
-- ZSH with Oh-My-Zsh  
-- Starship prompt  
-- Catppuccin color scheme  
+- ZSH with Oh-My-Zsh
+- Starship prompt
+- Catppuccin color scheme
 
 ### 🧰 Terminal Tools
 
-- Git and related essentials  
-- Additional tools (coming soon)  
+- Git and related essentials
+- Additional tools (coming soon)
 
 ### 🧩 GNOME Extensions & Configuration
 
-- Tiling Shell  
-- Blur My Shell  
-- Papirus icon theme  
-- Gravatar-based user profile image  
-- Wallpaper and GNOME UI settings  
-- Adds third-party APT sources  
+- Tiling Shell
+- Blur My Shell
+- Papirus icon theme
+- Gravatar-based user profile image
+- Wallpaper and GNOME UI settings
+- Adds third-party APT sources
 
 ### 📦 Applications
 
-- [Kitty Terminal](https://sw.kovidgoyal.net/kitty/)  
-- [BlackBox Terminal](https://apps.gnome.org/BlackBox/)  
-- [Visual Studio Code](https://code.visualstudio.com/)  
+- [Kitty Terminal](https://sw.kovidgoyal.net/kitty/)
+- [BlackBox Terminal](https://apps.gnome.org/BlackBox/)
+- [Visual Studio Code](https://code.visualstudio.com/)
 
 ---
 
