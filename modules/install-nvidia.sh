@@ -2,91 +2,137 @@
 set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
-MODULE_NAME="nvidia"
-ACTION="${1:-all}"
-
-# === Detect OS ===
+# === Ensure we are on Debian ===
 if [[ -f /etc/os-release ]]; then
   . /etc/os-release
-  OS_ID="$ID"
+  if [[ "$ID" != "debian" && "$ID_LIKE" != *"debian"* ]]; then
+    echo "⚠️  This script is for Debian only. Skipping execution."
+    exit 0
+  fi
 else
-  echo "❌ Could not detect OS."
+  echo "❌ Cannot detect OS. /etc/os-release missing."
   exit 1
 fi
 
-# === Skip if not Debian ===
-if [[ "$OS_ID" != "debian" ]]; then
-  echo "ℹ️ Skipping $MODULE_NAME: not a Debian system."
-  exit 0
-fi
 
-# === Check for NVIDIA GPU ===
-has_nvidia_gpu() {
-  lspci | grep -i 'vga\|3d' | grep -iq nvidia
+MODULE_NAME="nvidia-570"
+ACTION="${1:-all}"
+VERSION="570.172.08"
+URL="https://us.download.nvidia.com/XFree86/Linux-x86_64/${VERSION}/NVIDIA-Linux-x86_64-${VERSION}.run"
+INSTALLER="NVIDIA-Linux-x86_64-${VERSION}.run"
+EXTRACT_DIR="NVIDIA-Linux-x86_64-${VERSION}"
+DEB_NAME="nvidia-driver-${VERSION}"
+DEB_FILE="${DEB_NAME}_${VERSION}_amd64.deb"
+
+RUBY_INSTALLED_BEFORE=0
+[[ -x "$(command -v ruby)" ]] && RUBY_INSTALLED_BEFORE=1
+
+# === Shared cleanup for Ruby + fpm ===
+ruby_fpm_cleanup() {
+  if [[ $RUBY_INSTALLED_BEFORE -eq 0 ]]; then
+    echo "🧽 Removing temporary Ruby + fpm..."
+    sudo gem uninstall -aIx fpm || true
+    sudo apt remove --purge -y ruby ruby-dev
+    sudo apt autoremove -y
+  fi
 }
 
-# === Dependencies ===
-install_deps() {
-  echo "🔧 Installing build dependencies..."
+# === deps ===
+install_dependencies() {
+  echo "📦 Installing build dependencies..."
   sudo apt update
-  sudo apt install -y dkms linux-headers-$(uname -r) firmware-misc-nonfree
-  echo "✅ Dependencies installed."
-}
+  sudo apt install -y dkms build-essential linux-headers-$(uname -r) curl gcc make
 
-# === Enable experimental repo ===
-enable_experimental_repo() {
-  echo "📦 Enabling experimental repository..."
-  echo -e "\n# Experimental\ndeb http://deb.debian.org/debian experimental main contrib non-free non-free-firmware" | sudo tee /etc/apt/sources.list.d/experimental.list
-  sudo apt update
-}
-
-# === Install NVIDIA driver ===
-install_nvidia() {
-  if ! has_nvidia_gpu; then
-    echo "⚠️  No NVIDIA GPU detected. Skipping driver installation."
-    return
+  if [[ $RUBY_INSTALLED_BEFORE -eq 0 ]]; then
+    echo "💎 Installing Ruby temporarily..."
+    sudo apt install -y ruby ruby-dev
   fi
 
-  echo "🚀 Installing NVIDIA driver from experimental..."
-  sudo apt -t experimental install -y nvidia-driver
-  echo "✅ NVIDIA driver installed from experimental."
+  gem list -i fpm >/dev/null || sudo gem install --no-document fpm
 }
 
-# === Configure NVIDIA (Wayland-specific hint) ===
-config_nvidia() {
-  echo "⚙️  Configuring NVIDIA..."
-  echo "📝 For Wayland support, ensure KMS is enabled (usually default on modern systems)."
-  echo "🔁 A reboot is required to complete the setup."
+# === install ===
+install_driver() {
+  echo "⬇️  Downloading NVIDIA ${VERSION} driver..."
+  curl -fL -O "$URL"
+
+  # Validate download
+  if ! file "$INSTALLER" | grep -q "shell script"; then
+    echo "❌ The downloaded NVIDIA installer is not valid. Possible network or URL issue."
+    rm -f "$INSTALLER"
+    exit 1
+  fi
+
+  chmod +x "$INSTALLER"
+
+  if [[ -d "$EXTRACT_DIR" ]]; then
+    echo "🧽 Removing previous extraction at $EXTRACT_DIR"
+    sudo rm -rf "$EXTRACT_DIR"
+  fi
+
+  echo "📦 Extracting installer..."
+  ./"$INSTALLER" --extract-only
+
+  cd "$EXTRACT_DIR"
+
+  echo "🔧 Registering DKMS module..."
+  sudo ./nvidia-installer --dkms --add-this-kernel \
+    --silent \
+    --no-install-compat32-libs \
+    --no-install-libglvnd || echo "⚠️ Installer warning. Likely safe to continue."
+
+  echo "📦 Building .deb with FPM..."
+  fpm -s dir -t deb -n "$DEB_NAME" \
+      -v "$VERSION" \
+      --prefix=/usr \
+      -C . \
+      --description "NVIDIA ${VERSION} proprietary driver (repackaged for Debian)" \
+      .
+
+  echo "✅ Installing package: $DEB_FILE"
+  sudo dpkg -i "$DEB_FILE"
+  sudo dkms autoinstall
+  sudo update-initramfs -u
+
+  cd ..
+  rm -f "$INSTALLER"
+  sudo rm -rf "$EXTRACT_DIR"
+
+  ruby_fpm_cleanup
 }
 
-# === Clean installed NVIDIA packages ===
-clean_nvidia() {
-  echo "🧹 Removing NVIDIA driver..."
-  sudo apt remove --purge -y nvidia-driver || true
-  sudo apt autoremove -y
-  echo "✅ NVIDIA driver removed."
+# === config ===
+config_driver() {
+  echo "⚙️  Enabling NVIDIA memory preservation..."
+  echo "options nvidia NVreg_PreserveVideoMemoryAllocations=1" | sudo tee /etc/modprobe.d/nvidia-power.conf
+  sudo update-initramfs -u
+  echo "✅ Config applied. Reboot recommended."
+}
+
+# === clean ===
+clean_driver() {
+  echo "🧹 Cleaning up NVIDIA ${VERSION}..."
+
+  sudo apt remove --purge -y "$DEB_NAME" || true
+  sudo dkms remove nvidia/${VERSION} --all || true
+  sudo rm -f *.run *.deb
+  sudo rm -rf "$EXTRACT_DIR"
+
+  ruby_fpm_cleanup
+
+  echo "✅ Cleanup complete."
 }
 
 # === Entry point ===
 case "$ACTION" in
-  deps)
-    install_deps
-    enable_experimental_repo
-    ;;
-  install)
-    install_nvidia
-    ;;
-  config)
-    config_nvidia
-    ;;
-  clean)
-    clean_nvidia
-    ;;
+  deps) install_dependencies ;;
+  install) install_driver ;;
+  config) config_driver ;;
+  clean) clean_driver ;;
   all)
-    install_deps
-    enable_experimental_repo
-    install_nvidia
-    config_nvidia
+    install_dependencies
+    install_driver
+    config_driver
     ;;
   *)
     echo "❌ Unknown action: $ACTION"
