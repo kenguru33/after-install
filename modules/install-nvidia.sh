@@ -41,6 +41,29 @@ configure_grub() {
   fi
 }
 
+# === Enable Wayland in GDM ===
+enable_wayland_gdm() {
+  local gdm_conf="/etc/gdm3/daemon.conf"
+  echo "🔧 Enabling Wayland in GDM..."
+  if sudo grep -q '^WaylandEnable=' "$gdm_conf"; then
+    sudo sed -i 's/^WaylandEnable=.*/WaylandEnable=true/' "$gdm_conf"
+  else
+    sudo sed -i '/^\[daemon\]/a WaylandEnable=true' "$gdm_conf"
+  fi
+}
+
+# === Override udev to not disable Wayland ===
+override_udev_rule() {
+  echo "🛠️  Adding override to allow Wayland with NVIDIA..."
+  sudo mkdir -p /etc/udev/rules.d
+  sudo tee /etc/udev/rules.d/99-nvidia-enable-wayland.rules >/dev/null <<EOF
+# Override NVIDIA rule that disables Wayland
+# Touch the expected files to prevent /usr/lib/udev/rules.d/61-gdm.rules from disabling Wayland
+ACTION=="add", SUBSYSTEM=="module", KERNEL=="nvidia", RUN+="/bin/sh -c 'touch /run/udev/gdm-machine-has-vendor-nvidia-driver'"
+EOF
+  sudo udevadm control --reload-rules
+}
+
 # === Install dependencies ===
 install_deps() {
   echo "📦 Installing required packages..."
@@ -84,6 +107,7 @@ clean_driver() {
   echo "🧹 Removing NVIDIA driver..."
   sudo dkms remove nvidia/$VERSION --all || true
   sudo rm -f /etc/modprobe.d/nvidia-power.conf /etc/modprobe.d/disable-nouveau.conf
+  sudo rm -f /etc/udev/rules.d/99-nvidia-enable-wayland.rules
   sudo update-initramfs -u
   echo "✅ Driver removed. Manual reboot recommended."
 }
@@ -102,9 +126,11 @@ case "$ACTION" in
     install_deps
     disable_nouveau
     configure_grub
+    enable_wayland_gdm
+    override_udev_rule
     install_driver
     config_driver
-    echo "🔁 Reboot now to activate NVIDIA driver."
+    echo "🔁 Reboot now to activate NVIDIA driver and Wayland support."
     ;;
   config) config_driver ;;
   clean) clean_driver ;;
@@ -112,9 +138,11 @@ case "$ACTION" in
     install_deps
     disable_nouveau
     configure_grub
+    enable_wayland_gdm
+    override_udev_rule
     install_driver
     config_driver
-    echo "🔁 Reboot now to activate NVIDIA driver."
+    echo "🔁 Reboot now to activate NVIDIA driver and Wayland support."
     ;;
   *)
     echo "❌ Unknown action: $ACTION"
