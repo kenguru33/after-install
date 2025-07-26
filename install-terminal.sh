@@ -49,6 +49,7 @@ run_with_spinner() {
 
 case "$ACTION" in
   all)
+    run_with_spinner "Installing local bin path..." "$MODULES/install-local-bin-path.sh all"
     run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh all"
     run_with_spinner "Installing Git configuration..." "$MODULES/install-git-config.sh all"
     run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh all"
@@ -56,6 +57,7 @@ case "$ACTION" in
     run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh all"
     ;;
   install)
+
     run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh install"
     run_with_spinner "Installing Git..." "$MODULES/install-git.sh install"
     run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh install"
@@ -63,6 +65,7 @@ case "$ACTION" in
     run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh install"
     ;;
   config)
+
     run_with_spinner "Configuring extra packages..." "$MODULES/install-extra-packages.sh config"
     run_with_spinner "Configuring Git..." "$MODULES/install-git.sh config"
     run_with_spinner "Configuring Zsh..." "$MODULES/install-zsh.sh config"
@@ -71,6 +74,7 @@ case "$ACTION" in
   
     ;;
   clean)
+    
     run_with_spinner "Cleaning Git config..." "$MODULES/install-git.sh clean"
     run_with_spinner "Cleaning Nerd Fonts..." "$MODULES/install-nerdfonts.sh clean"
     run_with_spinner "Cleaning Zsh..." "$MODULES/install-zsh.sh clean"
