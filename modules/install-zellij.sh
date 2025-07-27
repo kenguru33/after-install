@@ -111,18 +111,31 @@ EOF
 
   echo "✅ Zellij theme set to Catppuccin Mocha"
 
-  if [[ -f "$ZSHRC_FILE" ]] && grep -q "exec zellij" "$ZSHRC_FILE"; then
-    echo "ℹ️ Zellij already set in $ZSHRC_FILE"
-  else
-    echo "🔧 Adding Zellij autostart to $ZSHRC_FILE"
-    cat >> "$ZSHRC_FILE" <<'EORC'
+  local path_line='export PATH="$HOME/.local/bin:$PATH"'
+  local path_comment='# Add local bin to PATH'
+  local autostart_marker='# === Auto-start Zellij'
 
+  # Ensure PATH line exists first
+  if ! grep -Fxq "$path_line" "$ZSHRC_FILE"; then
+    echo "🔧 Adding ~/.local/bin to PATH in $ZSHRC_FILE"
+    echo "" >> "$ZSHRC_FILE"
+    echo "$path_comment" >> "$ZSHRC_FILE"
+    echo "$path_line" >> "$ZSHRC_FILE"
+  fi
+
+  # Add Zellij autostart only if not already present
+  if ! grep -q "$autostart_marker" "$ZSHRC_FILE"; then
+    echo "🔧 Adding Zellij autostart to $ZSHRC_FILE"
+    echo "" >> "$ZSHRC_FILE"
+    cat >> "$ZSHRC_FILE" <<'EORC'
 # === Auto-start Zellij if not already inside ===
 if [ -z "$ZELLIJ" ] && [ -z "$TMUX" ] && [ -n "$PS1" ] && [ -t 1 ]; then
   command -v zellij >/dev/null && exec zellij
 fi
 EORC
     echo "✅ Zellij autostart added to $ZSHRC_FILE"
+  else
+    echo "ℹ️ Zellij autostart already present in $ZSHRC_FILE"
   fi
 }
 

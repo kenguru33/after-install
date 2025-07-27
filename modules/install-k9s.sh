@@ -27,6 +27,22 @@ ensure_local_bin_path() {
   fi
 }
 
+ensure_k9s_skin_env() {
+  local zshrc="$HOME/.zshrc"
+  local skin_line='export K9S_SKIN="catppuccin-mocha.yaml"'
+
+  if ! grep -qF "$skin_line" "$zshrc"; then
+    echo "🎨 Adding K9S_SKIN to $zshrc..."
+    echo "" >> "$zshrc"
+    echo "# Set K9s Catppuccin theme" >> "$zshrc"
+    echo "$skin_line" >> "$zshrc"
+    echo "✅ K9s skin environment variable added."
+  else
+    echo "ℹ️ K9s skin already set in $zshrc"
+  fi
+}
+
+
 # === Ensure Oh My Zsh completions are loaded ===
 ensure_zsh_completions_fpath() {
   local zshrc="$HOME/.zshrc"
@@ -94,6 +110,12 @@ config_k9s() {
   mkdir -p "$HOME/.config/fish/completions"
   "$HOME/.local/bin/k9s" completion fish > "$HOME/.config/fish/completions/k9s.fish"
 
+  # theme
+  OUT="${XDG_CONFIG_HOME:-$HOME/.config}/k9s/skins"
+  mkdir -p "$OUT"
+  curl -L https://github.com/catppuccin/k9s/archive/main.tar.gz | tar xz -C "$OUT" --strip-components=2 k9s-main/dist
+  ensure_k9s_skin_env
+
   echo "✅ Completions installed."
 }
 
@@ -105,6 +127,7 @@ clean_k9s() {
   rm -f "$HOME/.local/share/bash-completion/completions/k9s"
   rm -f "$HOME/.oh-my-zsh/completions/_k9s"
   rm -f "$HOME/.config/fish/completions/k9s.fish"
+  rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/k9s/skins"
 
   echo "✅ K9s and completions removed."
 }
