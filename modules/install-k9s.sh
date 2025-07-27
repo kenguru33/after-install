@@ -27,22 +27,6 @@ ensure_local_bin_path() {
   fi
 }
 
-ensure_k9s_skin_env() {
-  local zshrc="$HOME/.zshrc"
-  local skin_line='export K9S_SKIN="catppuccin-mocha.yaml"'
-
-  if ! grep -qF "$skin_line" "$zshrc"; then
-    echo "🎨 Adding K9S_SKIN to $zshrc..."
-    echo "" >> "$zshrc"
-    echo "# Set K9s Catppuccin theme" >> "$zshrc"
-    echo "$skin_line" >> "$zshrc"
-    echo "✅ K9s skin environment variable added."
-  else
-    echo "ℹ️ K9s skin already set in $zshrc"
-  fi
-}
-
-
 # === Ensure Oh My Zsh completions are loaded ===
 ensure_zsh_completions_fpath() {
   local zshrc="$HOME/.zshrc"
@@ -51,7 +35,6 @@ ensure_zsh_completions_fpath() {
   if ! grep -qF "$fpath_line" "$zshrc"; then
     echo "🔧 Adding Oh My Zsh completion path to ~/.zshrc..."
 
-    # Insert before first `compinit`, or append if not found
     if grep -q 'compinit' "$zshrc"; then
       sed -i "/compinit/i\\$fpath_line" "$zshrc"
     else
@@ -62,12 +45,12 @@ ensure_zsh_completions_fpath() {
   fi
 }
 
-# === Deps (none required) ===
+# === Step: deps ===
 install_dependencies() {
   echo "ℹ️  No dependencies needed for $MODULE_NAME"
 }
 
-# === Install K9s binary ===
+# === Step: install ===
 install_k9s() {
   echo "🔧 Installing K9s $K9S_VERSION to ~/.local/bin..."
 
@@ -87,9 +70,9 @@ install_k9s() {
   ensure_local_bin_path
 }
 
-# === Config: Shell completions ===
+# === Step: config ===
 config_k9s() {
-  echo "🧠 Installing K9s shell completions..."
+  echo "🧠 Installing K9s shell completions and Mocha theme..."
 
   if [[ ! -x "$HOME/.local/bin/k9s" ]]; then
     echo "⚠️  K9s binary not found. Run 'install' first."
@@ -110,26 +93,37 @@ config_k9s() {
   mkdir -p "$HOME/.config/fish/completions"
   "$HOME/.local/bin/k9s" completion fish > "$HOME/.config/fish/completions/k9s.fish"
 
-  # theme
-  OUT="${XDG_CONFIG_HOME:-$HOME/.config}/k9s/skins"
-  mkdir -p "$OUT"
-  curl -L https://github.com/catppuccin/k9s/archive/main.tar.gz | tar xz -C "$OUT" --strip-components=2 k9s-main/dist
-  ensure_k9s_skin_env
+  # Theme (Mocha only)
+  local SKIN_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/k9s/skins"
+  mkdir -p "$SKIN_DIR"
+  curl -fsSL https://raw.githubusercontent.com/catppuccin/k9s/main/dist/catppuccin-mocha.yaml \
+    -o "$SKIN_DIR/catppuccin-mocha.yaml"
+  echo "✅ Theme saved to $SKIN_DIR/catppuccin-mocha.yaml"
 
-  echo "✅ Completions installed."
+  # Config.yaml
+  local CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/k9s/config.yaml"
+  mkdir -p "$(dirname "$CONFIG_FILE")"
+  cat <<EOF > "$CONFIG_FILE"
+k9s:
+  ui:
+    skin: catppuccin-mocha
+EOF
+
+  echo "✅ config.yaml written with Catppuccin Mocha"
 }
 
-# === Clean up everything ===
+# === Step: clean ===
 clean_k9s() {
-  echo "🧹 Removing K9s and completions..."
+  echo "🧹 Removing K9s and related files..."
 
   rm -f "$HOME/.local/bin/k9s"
   rm -f "$HOME/.local/share/bash-completion/completions/k9s"
   rm -f "$HOME/.oh-my-zsh/completions/_k9s"
   rm -f "$HOME/.config/fish/completions/k9s.fish"
   rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/k9s/skins"
+  rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/k9s/config.yaml"
 
-  echo "✅ K9s and completions removed."
+  echo "✅ All K9s files removed."
 }
 
 # === Entry Point ===
