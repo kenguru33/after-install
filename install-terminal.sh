@@ -12,14 +12,14 @@ SHOW_OUTPUT="${SHOW_OUTPUT:-0}"
 # === Parse optional flags ===
 for arg in "$@"; do
   case "$arg" in
-    --verbose)
-      SHOW_OUTPUT=1
-      shift
-      ;;
-    --quiet)
-      SHOW_OUTPUT=0
-      shift
-      ;;
+  --verbose)
+    SHOW_OUTPUT=1
+    shift
+    ;;
+  --quiet)
+    SHOW_OUTPUT=0
+    shift
+    ;;
   esac
 done
 
@@ -48,43 +48,43 @@ run_with_spinner() {
 }
 
 case "$ACTION" in
-  all)
-    run_with_spinner "Installing local bin path..." "$MODULES/install-local-bin-path.sh all"
-    run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh all"
-    run_with_spinner "Installing Git configuration..." "$MODULES/install-git-config.sh all"
-    run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh all"
-    run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh all"
-    run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh all"
-    ;;
-  install)
+all)
+  run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh all"
+  run_with_spinner "Installing ZSH environment..." "$MODULES/debian/install-zsh.sh all"
+  run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh all"
+  run_with_spinner "Installing Git configuration..." "$MODULES/install-git-config.sh all"
+  run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh all"
+  run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh all"
+  ;;
+install)
+  run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh install"
+  run_with_spinner "Installing ZSH environment..." "$MODULES/debian/install-zsh.sh install"
+  run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh install"
+  run_with_spinner "Installing Git..." "$MODULES/install-git.sh install"
+  run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh install"
+  run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh install"
+  ;;
+config)
+  run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh config"
+  run_with_spinner "Installing ZSH environment..." "$MODULES/debian/install-zsh.sh config"
+  run_with_spinner "Configuring extra packages..." "$MODULES/install-extra-packages.sh config"
+  run_with_spinner "Configuring Git..." "$MODULES/install-git.sh config"
+  run_with_spinner "Configuring Nerd Fonts..." "$MODULES/install-nerdfonts.sh config"
+  run_with_spinner "Configuring Lazyvim..." "$MODULES/install-lazyvim.sh config"
 
-    run_with_spinner "Installing extra packages..." "$MODULES/install-extra-packages.sh install"
-    run_with_spinner "Installing Git..." "$MODULES/install-git.sh install"
-    run_with_spinner "Installing Zsh..." "$MODULES/install-zsh.sh install"
-    run_with_spinner "Installing Nerd Fonts..." "$MODULES/install-nerdfonts.sh install"
-    run_with_spinner "Installing Lazyvim..." "$MODULES/install-lazyvim.sh install"
-    ;;
-  config)
-
-    run_with_spinner "Configuring extra packages..." "$MODULES/install-extra-packages.sh config"
-    run_with_spinner "Configuring Git..." "$MODULES/install-git.sh config"
-    run_with_spinner "Configuring Zsh..." "$MODULES/install-zsh.sh config"
-    run_with_spinner "Configuring Nerd Fonts..." "$MODULES/install-nerdfonts.sh config"
-    run_with_spinner "Configuring Lazyvim..." "$MODULES/install-lazyvim.sh config"
-  
-    ;;
-  clean)
-    
-    run_with_spinner "Cleaning Git config..." "$MODULES/install-git.sh clean"
-    run_with_spinner "Cleaning Nerd Fonts..." "$MODULES/install-nerdfonts.sh clean"
-    run_with_spinner "Cleaning Zsh..." "$MODULES/install-zsh.sh clean"
-    run_with_spinner "Cleaning extra packages..." "$MODULES/install-extra-packages.sh clean"
-    run_with_spinner "Cleaning Lazyvim..." "$MODULES/install-lazyvim.sh clean"
-    ;;
-  *)
-    echo "Usage: $0 [--verbose|--quiet] [all|install|config|clean]"
-    exit 1
-    ;;
+  ;;
+clean)
+  run_with_spinner "Installing k8s tools..." "$MODULES/install-k8s-tools.sh clena"
+  run_with_spinner "Installing ZSH environment..." "$MODULES/debian/install-zsh.sh clean"
+  run_with_spinner "Cleaning Git config..." "$MODULES/install-git.sh clean"
+  run_with_spinner "Cleaning Nerd Fonts..." "$MODULES/install-nerdfonts.sh clean"
+  run_with_spinner "Cleaning extra packages..." "$MODULES/install-extra-packages.sh clean"
+  run_with_spinner "Cleaning Lazyvim..." "$MODULES/install-lazyvim.sh clean"
+  ;;
+*)
+  echo "Usage: $0 [--verbose|--quiet] [all|install|config|clean]"
+  exit 1
+  ;;
 esac
 
 echo "✅ Terminal environment '$ACTION' completed successfully!"

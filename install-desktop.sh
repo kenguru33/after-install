@@ -45,7 +45,7 @@ case "$ACTION" in
     run_with_spinner "Installing GNOME config..." "$MODULES/install-gnome-config.sh all"
     run_with_spinner "Installing Papirus icon theme..." "$MODULES/install-papirus-icon-theme.sh all"
     run_with_spinner "Installing GNOME extensions..." "$MODULES/install-gnome-extensions.sh all"
-    run_with_spinner "Installing NVIDIA driver..." "$MODULES/install-nvidia.sh all"
+#    run_with_spinner "Installing NVIDIA driver..." "$MODULES/install-nvidia.sh all"
     ;;
   install)
     run_with_spinner "Installing user profile image..." "$MODULES/install-gravatar.sh install"
