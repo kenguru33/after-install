@@ -5,6 +5,15 @@ trap 'echo "❌ NVIDIA CUDA driver installation failed. Exiting." >&2' ERR
 MODULE_NAME="nvidia-cuda"
 ACTION="${1:-all}"
 
+# === Check for NVIDIA GPU ===
+check_nvidia_gpu() {
+  if ! lspci | grep -i nvidia > /dev/null; then
+    echo "⚠️ No NVIDIA GPU detected. Skipping CUDA driver installation."
+    exit 0
+  fi
+}
+check_nvidia_gpu
+
 # === Detect OS Version and Set DISTRO ===
 if [[ -f /etc/os-release ]]; then
   . /etc/os-release
