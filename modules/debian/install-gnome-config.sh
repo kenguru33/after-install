@@ -71,7 +71,8 @@ apply_appearance_settings() {
   gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_DEST"
   gsettings set org.gnome.desktop.background picture-uri-dark "file://$WALLPAPER_DEST"
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-  # gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+  #gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+  gsettings set org.gnome.desktop.wm.preferences button-layout ':close'
 }
 
 reset_appearance_settings() {
@@ -85,13 +86,13 @@ configure_workspace_keys() {
 
   # Static workspaces (disable dynamic)
   gsettings set org.gnome.mutter dynamic-workspaces false
-  gsettings set org.gnome.desktop.wm.preferences num-workspaces 9
-  echo "🔢 Set static workspaces: 9"
+  gsettings set org.gnome.desktop.wm.preferences num-workspaces 3
+  echo "🔢 Set static workspaces: 3"
 
   # Move window up/down
-  gsettings set org.gnome.desktop.wm.keybindings.move-to-workspace-up "['<Control><Alt>Up']"
-  gsettings set org.gnome.desktop.wm.keybindings.move-to-workspace-down "['<Control><Alt>Down']"
-  
+  #gsettings set org.gnome.desktop.wm.keybindings.move-to-workspace-up "['<Control><Alt>Up']"
+  #gsettings set org.gnome.desktop.wm.keybindings.move-to-workspace-down "['<Control><Alt>Down']"
+
   echo "✅ GNOME keybindings set:"
   echo "   - Ctrl+Alt+←/→: switch (default)"
   echo "   - Ctrl+Alt+↑/↓: move window"
@@ -144,27 +145,27 @@ main() {
   detect_os
 
   case "$ACTION" in
-    all)
-      install_dependencies
-      install_wallpaper
-      config_gnome
-      ;;
-    deps)
-      install_dependencies
-      ;;
-    install)
-      install_wallpaper
-      ;;
-    config)
-      config_gnome
-      ;;
-    clean)
-      clean_config
-      ;;
-    *)
-      show_help
-      exit 1
-      ;;
+  all)
+    install_dependencies
+    install_wallpaper
+    config_gnome
+    ;;
+  deps)
+    install_dependencies
+    ;;
+  install)
+    install_wallpaper
+    ;;
+  config)
+    config_gnome
+    ;;
+  clean)
+    clean_config
+    ;;
+  *)
+    show_help
+    exit 1
+    ;;
   esac
 }
 
