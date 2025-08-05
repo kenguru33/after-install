@@ -28,7 +28,7 @@ install() {
   echo "⬇️ Installing Volta for user $REAL_USER..."
 
   if [[ ! -x "$VOLTA_BIN" ]]; then
-    sudo -u "$REAL_USER" curl -fsSL https://get.volta.sh | bash
+    sudo -u "$REAL_USER" curl https://get.volta.sh | bash -s -- --skip-setup
     echo "✅ Volta installed to ~/.volta"
   else
     echo "⏭️  Volta already installed"
@@ -64,14 +64,18 @@ clean() {
 
 # === Entry Point ===
 case "$ACTION" in
-  all)    deps; install; config ;;
-  deps)   deps ;;
-  install) install ;;
-  config) config ;;
-  clean)  clean ;;
-  *)
-    echo "❌ Unknown action: $ACTION"
-    echo "Usage: $0 [all|deps|install|config|clean]"
-    exit 1
-    ;;
+all)
+  deps
+  install
+  config
+  ;;
+deps) deps ;;
+install) install ;;
+config) config ;;
+clean) clean ;;
+*)
+  echo "❌ Unknown action: $ACTION"
+  echo "Usage: $0 [all|deps|install|config|clean]"
+  exit 1
+  ;;
 esac

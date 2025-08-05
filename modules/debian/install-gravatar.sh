@@ -2,6 +2,7 @@
 set -e
 
 MODULE_NAME="set-user-avatar"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FACE_IMAGE="$HOME/.face"
 AFTER_INSTALL_CONFIG="$HOME/.config/after-install/userinfo.config"
 MODULE_EMAIL_FILE="$HOME/.config/$MODULE_NAME/email"
@@ -40,6 +41,30 @@ install_dependencies() {
   done
 }
 
+# === Ensure email is loaded or fallback to user-profile ===
+load_email_from_user_profile() {
+  if [[ ! -f "$AFTER_INSTALL_CONFIG" ]]; then
+    echo "📁 User config not found. Running user-profile to collect info..."
+    "$SCRIPT_DIR/user-profile.sh" install
+  fi
+
+  source "$AFTER_INSTALL_CONFIG"
+
+  if [[ -z "$email" ]]; then
+    echo "⚠️  Email missing in config. Running user-profile again..."
+    "$SCRIPT_DIR/user-profile.sh" install
+    source "$AFTER_INSTALL_CONFIG"
+  fi
+
+  if [[ -z "$email" ]]; then
+    echo "❌ Still missing email after running user-profile. Exiting."
+    exit 1
+  fi
+
+  EMAIL="$email"
+}
+
+# === Fallback logic to find email ===
 find_email() {
   if [[ -n "$EMAIL" ]]; then
     return
@@ -59,9 +84,7 @@ find_email() {
     return
   fi
 
-  echo "❌ No email provided and no config found."
-  echo "💡 Please run: ./user-profile.sh"
-  exit 1
+  load_email_from_user_profile
 }
 
 install() {
@@ -72,7 +95,7 @@ config() {
   find_email
 
   mkdir -p "$(dirname "$MODULE_EMAIL_FILE")"
-  echo "$EMAIL" > "$MODULE_EMAIL_FILE"
+  echo "$EMAIL" >"$MODULE_EMAIL_FILE"
 
   HASH=$(echo -n "$EMAIL" | tr '[:upper:]' '[:lower:]' | md5sum | cut -d' ' -f1)
   GRAVATAR_URL="https://www.gravatar.com/avatar/$HASH?s=$SIZE&d=identicon"
@@ -95,7 +118,7 @@ config() {
   # AccountsService config
   ACCOUNTS_USER_CONFIG="/var/lib/AccountsService/users/$(whoami)"
   sudo mkdir -p "$(dirname "$ACCOUNTS_USER_CONFIG")"
-  sudo tee "$ACCOUNTS_USER_CONFIG" > /dev/null <<EOF
+  sudo tee "$ACCOUNTS_USER_CONFIG" >/dev/null <<EOF
 [User]
 Icon=$GDM_ICON_DIR/$(whoami)
 EOF
@@ -117,13 +140,13 @@ all() {
 
 # === Entry Point ===
 case "$ACTION" in
-  all) all ;;
-  deps) install_dependencies ;;
-  install) install ;;
-  config) config ;;
-  clean) clean ;;
-  *)
-    echo "Usage: $0 {all|deps|install|config|clean} [email] [size]"
-    exit 1
-    ;;
+all) all ;;
+deps) install_dependencies ;;
+install) install ;;
+config) config ;;
+clean) clean ;;
+*)
+  echo "Usage: $0 {all|deps|install|config|clean} [email] [size]"
+  exit 1
+  ;;
 esac

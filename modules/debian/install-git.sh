@@ -28,30 +28,33 @@ DEPS=("git" "curl")
 
 install_dependencies() {
   echo "🔧 Checking required dependencies..."
-
   if [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
     sudo apt update
     sudo apt install -y "${DEPS[@]}"
-  elif [[ "$ID" == "fedora" ]]; then
-    sudo dnf install -y "${DEPS[@]}"
   else
-    echo "❌ Unsupported OS: $ID"
+    echo "❌ Unsupported OS: $ID. Only Debian-based systems are supported."
     exit 1
   fi
 }
 
-# === Load user config ===
+# === Load user config (auto-runs user-profile if needed) ===
 load_user_config() {
   if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "❌ User info config not found: $CONFIG_FILE"
-    echo "💡 Run user-profile.sh first to set name and email."
-    exit 1
+    echo "📁 User config not found: $CONFIG_FILE"
+    echo "⚙️  Running user-profile module to collect user info..."
+    "$SCRIPT_DIR/user-profile.sh" install
   fi
 
   source "$CONFIG_FILE"
 
   if [[ -z "$name" || -z "$email" ]]; then
-    echo "❌ Invalid user info in $CONFIG_FILE"
+    echo "⚠️  User config is incomplete. Running user-profile again..."
+    "$SCRIPT_DIR/user-profile.sh" install
+    source "$CONFIG_FILE"
+  fi
+
+  if [[ -z "$name" || -z "$email" ]]; then
+    echo "❌ Still missing name or email after user-profile. Exiting."
     exit 1
   fi
 }
@@ -140,29 +143,29 @@ show_help() {
 
 # === Entry Point ===
 case "$ACTION" in
-  all)
-    load_user_config
-    install_git_package
-    configure_git
-    install_git_completion_zsh
-    config_git_shell
-    ;;
-  deps)
-    install_dependencies
-    ;;
-  install)
-    install_git_package
-    ;;
-  config)
-    load_user_config
-    configure_git
-    install_git_completion_zsh
-    config_git_shell
-    ;;
-  clean)
-    clean_git
-    ;;
-  *)
-    show_help
-    ;;
+all)
+  load_user_config
+  install_git_package
+  configure_git
+  install_git_completion_zsh
+  config_git_shell
+  ;;
+deps)
+  install_dependencies
+  ;;
+install)
+  install_git_package
+  ;;
+config)
+  load_user_config
+  configure_git
+  install_git_completion_zsh
+  config_git_shell
+  ;;
+clean)
+  clean_git
+  ;;
+*)
+  show_help
+  ;;
 esac
