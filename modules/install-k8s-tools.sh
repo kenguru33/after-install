@@ -19,7 +19,7 @@ fi
 DEPS=()
 case "$OS_ID" in
   debian|ubuntu)
-    DEPS=(git curl unzip golang bash-completion)
+    DEPS=(git curl unzip golang bash-completion make)
     ;;
   fedora)
     DEPS=(git curl unzip golang bash-completion)

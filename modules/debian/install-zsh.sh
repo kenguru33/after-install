@@ -7,180 +7,107 @@ ACTION="${1:-all}"
 REAL_USER="${SUDO_USER:-$USER}"
 HOME_DIR="$(eval echo "~$REAL_USER")"
 PLUGIN_DIR="$HOME_DIR/.zsh/plugins"
+CONFIG_DIR="$HOME_DIR/.zsh/config"
+ZSHRC_FILE="$HOME_DIR/.zshrc"
 LOCAL_BIN="$HOME_DIR/.local/bin"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ZSHRC_TEMPLATE="$SCRIPT_DIR/config/zshrc"
 
 declare -A PLUGINS=(
   ["zsh-autosuggestions"]="https://github.com/zsh-users/zsh-autosuggestions.git"
   ["zsh-syntax-highlighting"]="https://github.com/zsh-users/zsh-syntax-highlighting.git"
-  ["fzf-tab"]="https://github.com/Aloxaf/fzf-tab.git"
 )
 
-declare -A COMPLETIONS=(
-  ["git"]="https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash"
-  ["kubectl"]="DYNAMIC"
-  ["docker"]="DYNAMIC"
-  ["helm"]="DYNAMIC"
-  ["terraform"]="DYNAMIC"
-  ["kubectx"]="https://raw.githubusercontent.com/ahmetb/kubectx/master/completion/_kubectx.zsh"
-  ["kubens"]="https://raw.githubusercontent.com/ahmetb/kubectx/master/completion/_kubens.zsh"
-)
+# === Helper: write config ===
+write_zsh_config() {
+  local name="$1"
+  local content="$2"
+  local file="$CONFIG_DIR/$name.zsh"
+  mkdir -p "$CONFIG_DIR"
+  echo "$content" > "$file"
+  chown "$REAL_USER:$REAL_USER" "$file"
+  echo "✅ Wrote $file"
+}
 
 # === Step: deps ===
 deps() {
-  echo "📦 Installing dependencies..."
+  echo "📦 Installing Zsh dependencies..."
   sudo apt update
-  sudo apt install -y zsh git curl unzip fzf bat eza fd-find neovim
+  sudo apt install -y zsh git
 
   echo "🛠 Ensuring $LOCAL_BIN exists..."
   mkdir -p "$LOCAL_BIN"
   chown "$REAL_USER:$REAL_USER" "$LOCAL_BIN"
-
-  # Symlink fdfind → fd if needed
-  if command -v fdfind >/dev/null && ! command -v fd >/dev/null; then
-    ln -sf "$(command -v fdfind)" "$LOCAL_BIN/fd"
-    echo "✅ Linked fdfind → fd"
-  fi
-
-  # Symlink batcat → bat if needed
-  if command -v batcat >/dev/null && ! command -v bat >/dev/null; then
-    ln -sf "$(command -v batcat)" "$LOCAL_BIN/bat"
-    echo "✅ Linked batcat → bat"
-  fi
 }
 
 # === Step: install ===
 install() {
-  echo "🔌 Installing Zsh plugins into $PLUGIN_DIR..."
+  echo "🔌 Installing or updating Zsh plugins..."
   mkdir -p "$PLUGIN_DIR"
 
   for name in "${!PLUGINS[@]}"; do
     repo="${PLUGINS[$name]}"
     dir="$PLUGIN_DIR/$name"
-    if [[ -d "$dir" ]]; then
-      echo "⏭️  $name already installed"
+
+    if [[ -d "$dir/.git" ]]; then
+      echo "🔄 Updating $name..."
+      git -C "$dir" pull --quiet --rebase
+      echo "✅ Updated $name"
     else
+      echo "⬇️  Installing $name..."
+      rm -rf "$dir"
       git clone --depth=1 "$repo" "$dir"
       echo "✅ Installed $name"
     fi
+    chown -R "$REAL_USER:$REAL_USER" "$dir"
   done
-
-  echo "🧠 Installing completions into $PLUGIN_DIR..."
-  for name in "${!COMPLETIONS[@]}"; do
-    dir="$PLUGIN_DIR/$name"
-    mkdir -p "$dir"
-
-    if [[ "${COMPLETIONS[$name]}" == "DYNAMIC" ]]; then
-      file="$dir/$name.zsh"
-      if command -v "$name" >/dev/null 2>&1; then
-        echo "📄 Generating $name completion..."
-        case "$name" in
-          kubectl)   "$name" completion zsh > "$file" ;;
-          docker)    "$name" completion zsh > "$file" ;;
-          helm)      "$name" completion zsh > "$file" ;;
-          terraform) "$name" completion zsh > "$file" ;;
-          *) echo "❌ Unknown dynamic completion for $name"; continue ;;
-        esac
-        echo "✅ Created $file"
-      else
-        echo "⚠️  Skipping $name: CLI not installed"
-      fi
-    else
-      url="${COMPLETIONS[$name]}"
-      file="$dir/${url##*/}"
-      if [[ ! -f "$file" ]]; then
-        echo "📥 Downloading $name completion..."
-        curl -fsSL "$url" -o "$file"
-        echo "✅ Installed $file"
-      else
-        echo "⏭️  $name already present"
-      fi
-    fi
-  done
-
-  echo "🔐 Securing ~/.kube config files..."
-  KUBE_DIR="$HOME_DIR/.kube"
-  if [[ -d "$KUBE_DIR" ]]; then
-    find "$KUBE_DIR" -type f -readable | while read -r file; do
-      perms=$(stat -c "%a" "$file")
-      if [[ "$perms" != "600" ]]; then
-        echo "🔧 Fixing $file (was $perms)"
-        chmod 600 "$file"
-        chown "$REAL_USER:$REAL_USER" "$file"
-      fi
-    done
-  fi
-
-  if [[ -n "$KUBECONFIG" && -f "$KUBECONFIG" ]]; then
-    perms=$(stat -c "%a" "$KUBECONFIG")
-    if [[ "$perms" != "600" ]]; then
-      echo "🔧 Fixing \$KUBECONFIG at $KUBECONFIG (was $perms)"
-      chmod 600 "$KUBECONFIG"
-      chown "$REAL_USER:$REAL_USER" "$KUBECONFIG"
-    fi
-  fi
-
-  if [[ ! -x "$LOCAL_BIN/starship" ]]; then
-    echo "🚀 Installing Starship prompt..."
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -y --bin-dir "$LOCAL_BIN"
-    chown "$REAL_USER:$REAL_USER" "$LOCAL_BIN/starship"
-  else
-    echo "⏭️  Starship already installed"
-  fi
 
   echo "🛠 Ensuring Zsh is default shell for $REAL_USER..."
   if [[ "$(getent passwd "$REAL_USER" | cut -d: -f7)" != "$(command -v zsh)" ]]; then
     sudo chsh -s "$(command -v zsh)" "$REAL_USER"
-    echo "✅ Default shell set to Zsh (log out and back in to activate)"
+    echo "✅ Default shell set to Zsh"
   else
-    echo "⏭️  Zsh is already the default shell"
+    echo "⏭️  Zsh already default shell"
   fi
 }
 
 # === Step: config ===
 config() {
-  echo "🔧 Configuring .zshrc..."
+  echo "🔧 Writing Zsh plugin configs..."
 
-  USER_HOME="$(eval echo "~$REAL_USER")"
-  ZSHRC="$USER_HOME/.zshrc"
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  ZSHRC_TEMPLATE="$SCRIPT_DIR/config/zshrc"
+  mkdir -p "$CONFIG_DIR"
 
-  echo "📂 REAL_USER = $REAL_USER"
-  echo "📂 USER_HOME = $USER_HOME"
-  echo "📄 ZSHRC = $ZSHRC"
-  echo "📄 TEMPLATE = $ZSHRC_TEMPLATE"
+  write_zsh_config "autosuggestions" \
+'[[ -f ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh'
 
-  if [[ -f "$ZSHRC" ]]; then
-    timestamp="$(date +%Y%m%d%H%M%S)"
-    backup="$ZSHRC.backup.$timestamp"
-    cp "$ZSHRC" "$backup"
-    echo "💾 Existing .zshrc backed up to:"
-    echo "   $backup"
-    cp "$ZSHRC_TEMPLATE" "$ZSHRC"
-    echo "✅ .zshrc replaced from template"
-  else
-    cp "$ZSHRC_TEMPLATE" "$ZSHRC"
-    echo "✅ .zshrc created from template"
+  write_zsh_config "syntax-highlighting" \
+'[[ -f ~/.zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source ~/.zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh'
+
+  echo "🔧 Installing .zshrc template..."
+
+  if [[ -f "$ZSHRC_FILE" ]]; then
+    backup="$ZSHRC_FILE.backup.$(date +%Y%m%d%H%M%S)"
+    cp "$ZSHRC_FILE" "$backup"
+    echo "💾 Backed up existing .zshrc to $backup"
   fi
 
-  chown "$REAL_USER:$REAL_USER" "$ZSHRC"
+  cp "$ZSHRC_TEMPLATE" "$ZSHRC_FILE"
+  chown "$REAL_USER:$REAL_USER" "$ZSHRC_FILE"
+  echo "✅ Installed new .zshrc"
 }
 
 # === Step: clean ===
 clean() {
-  echo "🧹 Cleaning Zsh environment..."
+  echo "🧹 Cleaning Zsh setup..."
 
   echo "❌ Removing plugins from $PLUGIN_DIR"
   rm -rf "$PLUGIN_DIR"
 
-  echo "❌ Removing starship binary from $LOCAL_BIN"
-  rm -f "$LOCAL_BIN/starship"
-
-  echo "❌ Removing symlinks for fd and bat"
-  rm -f "$LOCAL_BIN/fd" "$LOCAL_BIN/bat"
+  echo "❌ Removing Zsh config files"
+  rm -rf "$CONFIG_DIR"
 
   echo "❌ Removing .zshrc"
-  rm -f "$HOME_DIR/.zshrc"
+  rm -f "$ZSHRC_FILE"
 
   echo "✅ Clean complete."
 }
