@@ -3,9 +3,12 @@ set -e
 trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 MODULE_NAME="blackbox-terminal"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
 PALETTE_NAME="Catppuccin Mocha"
 PALETTE_FILE="catppuccin-mocha"
+FONT_NAME="Hack Nerd Font Mono"
+NERDFONT_INSTALLER="$SCRIPT_DIR/install-nerdfont-hack.sh"
 ACTION="${1:-all}"
 
 # === Detect OS ===
@@ -44,6 +47,30 @@ install_blackbox() {
   echo "✅ BlackBox is available: $(command -v blackbox)"
 }
 
+check_font_installed() {
+  echo "🔍 Checking for required font: $FONT_NAME..."
+  if fc-list | grep -i -q "$FONT_NAME"; then
+    echo "✅ Font '$FONT_NAME' is installed."
+    return
+  fi
+
+  echo "❌ '$FONT_NAME' not found. Running Nerd Font installer..."
+  if [[ -x "$NERDFONT_INSTALLER" ]]; then
+    "$NERDFONT_INSTALLER" install
+  else
+    echo "❌ Missing or non-executable script: $NERDFONT_INSTALLER"
+    exit 1
+  fi
+
+  # Re-check after install
+  if fc-list | grep -i -q "$FONT_NAME"; then
+    echo "✅ Font '$FONT_NAME' installed successfully."
+  else
+    echo "❌ Failed to detect '$FONT_NAME' after install."
+    exit 1
+  fi
+}
+
 install_catppuccin_theme() {
   echo "🎨 Installing Catppuccin Mocha theme..."
   mkdir -p "$SCHEME_DIR"
@@ -64,10 +91,11 @@ config_blackbox() {
   SCHEMA_ID="com.raggesilver.BlackBox"
 
   if gsettings list-schemas | grep -q "$SCHEMA_ID"; then
-    gsettings set $SCHEMA_ID font 'Hack Nerd Font Mono 11'
-    gsettings set $SCHEMA_ID terminal-padding "(uint32 12, uint32 12, uint32 12, uint32 12)"
-    gsettings set $SCHEMA_ID theme-dark "$PALETTE_NAME"
-    gsettings set $SCHEMA_ID style-preference 2  # Force dark mode
+    gsettings set "$SCHEMA_ID" font "$FONT_NAME 11"
+    gsettings set "$SCHEMA_ID" terminal-padding "(uint32 12, uint32 12, uint32 12, uint32 12)"
+    gsettings set "$SCHEMA_ID" theme-dark "$PALETTE_NAME"
+    gsettings set "$SCHEMA_ID" style-preference 2     # Force dark mode
+    gsettings set "$SCHEMA_ID" easy-copy-paste true
     echo "✅ Configuration applied via GSettings."
   else
     echo "⚠️ GSettings schema '$SCHEMA_ID' not found. Skipping configuration."
@@ -85,21 +113,26 @@ clean_blackbox() {
 
 # === Entry Point ===
 case "$ACTION" in
-  deps) install_deps ;;
-  install)
-    install_blackbox
-    install_catppuccin_theme
-    ;;
-  config) config_blackbox ;;
-  clean) clean_blackbox ;;
-  all)
-    install_deps
-    install_blackbox
-    install_catppuccin_theme
-    config_blackbox
-    ;;
-  *)
-    echo "Usage: $0 [deps|install|config|clean|all]"
-    exit 1
-    ;;
+deps) install_deps ;;
+install)
+  install_blackbox
+  check_font_installed
+  install_catppuccin_theme
+  ;;
+config)
+  check_font_installed
+  config_blackbox
+  ;;
+clean) clean_blackbox ;;
+all)
+  install_deps
+  install_blackbox
+  check_font_installed
+  install_catppuccin_theme
+  config_blackbox
+  ;;
+*)
+  echo "Usage: $0 [deps|install|config|clean|all]"
+  exit 1
+  ;;
 esac

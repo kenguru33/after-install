@@ -1,10 +1,12 @@
 #!/bin/bash
 set -e
-trap 'echo "❌ Something went wrong. Exiting." >&2' ERR
+trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 MODULE_NAME="kitty"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config/kitty"
 FONT_NAME="Hack Nerd Font Mono"
+NERDFONT_INSTALLER="$SCRIPT_DIR/install-nerdfont-hack.sh"
 ACTION="${1:-all}"
 
 # === Detect OS ===
@@ -29,7 +31,6 @@ install_deps() {
   echo "📦 Installing dependencies for Debian..."
   sudo apt update
   sudo apt install -y "${DEPS[@]}"
-
 }
 
 install_kitty() {
@@ -50,10 +51,10 @@ check_font_installed() {
   fi
 
   echo "❌ '$FONT_NAME' not found. Running Nerd Font installer..."
-  if [[ -x "./install-nerdfont-hack.sh" ]]; then
-    ./install-nerdfont-hack.sh install
+  if [[ -x "$NERDFONT_INSTALLER" ]]; then
+    "$NERDFONT_INSTALLER" install
   else
-    echo "❌ Missing script: ./install-nerdfont-hack.sh"
+    echo "❌ Missing or non-executable script: $NERDFONT_INSTALLER"
     exit 1
   fi
 
@@ -67,7 +68,7 @@ check_font_installed() {
 }
 
 configure_kitty() {
-  echo "🎨 Configuring Kitty..."
+  echo "🎨 Configuring Kitty with Catppuccin Mocha theme..."
 
   mkdir -p "$CONFIG_DIR"
 
@@ -183,12 +184,14 @@ clean_kitty() {
   echo "✅ Kitty uninstalled."
 }
 
+# === Entry Point ===
 case "$ACTION" in
 deps)
   install_deps
   ;;
 install)
   install_kitty
+  check_font_installed
   ;;
 config)
   check_font_installed
