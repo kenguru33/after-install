@@ -3,6 +3,8 @@ set -e
 
 MODULE_NAME="set-user-avatar"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+USER_PROFILE_SCRIPT="$SCRIPT_DIR/extra/user-profile.sh"
+
 FACE_IMAGE="$HOME/.face"
 AFTER_INSTALL_CONFIG="$HOME/.config/after-install/userinfo.config"
 MODULE_EMAIL_FILE="$HOME/.config/$MODULE_NAME/email"
@@ -41,18 +43,18 @@ install_dependencies() {
   done
 }
 
-# === Ensure email is loaded or fallback to user-profile ===
+# === Load email from user-profile ===
 load_email_from_user_profile() {
   if [[ ! -f "$AFTER_INSTALL_CONFIG" ]]; then
     echo "📁 User config not found. Running user-profile to collect info..."
-    "$SCRIPT_DIR/user-profile.sh" install
+    "$USER_PROFILE_SCRIPT"
   fi
 
   source "$AFTER_INSTALL_CONFIG"
 
   if [[ -z "$email" ]]; then
     echo "⚠️  Email missing in config. Running user-profile again..."
-    "$SCRIPT_DIR/user-profile.sh" install
+    "$USER_PROFILE_SCRIPT"
     source "$AFTER_INSTALL_CONFIG"
   fi
 
@@ -64,7 +66,7 @@ load_email_from_user_profile() {
   EMAIL="$email"
 }
 
-# === Fallback logic to find email ===
+# === Determine email ===
 find_email() {
   if [[ -n "$EMAIL" ]]; then
     return
@@ -104,7 +106,7 @@ config() {
   curl -sL "$GRAVATAR_URL" -o "$FACE_IMAGE"
   echo "🖼️  Saved avatar to $FACE_IMAGE"
 
-  # Set GNOME avatar using gsettings if available
+  # Set GNOME account picture via gsettings if possible
   if command -v gsettings &>/dev/null; then
     echo "🔧 Setting GNOME account picture via gsettings..."
     gsettings set org.gnome.desktop.account-service account-picture "$FACE_IMAGE" 2>/dev/null || true
@@ -115,7 +117,7 @@ config() {
   sudo mkdir -p "$GDM_ICON_DIR"
   sudo cp "$FACE_IMAGE" "$GDM_ICON_DIR/$(whoami)"
 
-  # AccountsService config
+  # Set in AccountsService
   ACCOUNTS_USER_CONFIG="/var/lib/AccountsService/users/$(whoami)"
   sudo mkdir -p "$(dirname "$ACCOUNTS_USER_CONFIG")"
   sudo tee "$ACCOUNTS_USER_CONFIG" >/dev/null <<EOF
@@ -140,13 +142,13 @@ all() {
 
 # === Entry Point ===
 case "$ACTION" in
-all) all ;;
-deps) install_dependencies ;;
-install) install ;;
-config) config ;;
-clean) clean ;;
-*)
-  echo "Usage: $0 {all|deps|install|config|clean} [email] [size]"
-  exit 1
-  ;;
+  all) all ;;
+  deps) install_dependencies ;;
+  install) install ;;
+  config) config ;;
+  clean) clean ;;
+  *)
+    echo "Usage: $0 {all|deps|install|config|clean} [email] [size]"
+    exit 1
+    ;;
 esac

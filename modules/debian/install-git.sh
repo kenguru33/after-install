@@ -4,13 +4,14 @@ trap 'echo "❌ Git setup failed. Exiting." >&2' ERR
 
 MODULE_NAME="git"
 ACTION="${1:-all}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+USER_PROFILE_SCRIPT="$SCRIPT_DIR/extra/user-profile.sh"
 CONFIG_FILE="$HOME/.config/after-install/userinfo.config"
 
 REAL_USER="${SUDO_USER:-$USER}"
 HOME_DIR="$(eval echo "~$REAL_USER")"
 ZSH_CONFIG_DIR="$HOME_DIR/.zsh/config"
 ZSH_TARGET_FILE="$ZSH_CONFIG_DIR/git.zsh"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="$HOME_DIR/.zsh/plugins/git"
 FALLBACK_COMPLETION="$PLUGIN_DIR/git-completion.zsh"
 TEMPLATE_FILE="$SCRIPT_DIR/config/git.zsh"
@@ -42,14 +43,14 @@ load_user_config() {
   if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "📁 User config not found: $CONFIG_FILE"
     echo "⚙️  Running user-profile module to collect user info..."
-    "$SCRIPT_DIR/user-profile.sh" install
+    "$USER_PROFILE_SCRIPT"
   fi
 
   source "$CONFIG_FILE"
 
   if [[ -z "$name" || -z "$email" ]]; then
     echo "⚠️  User config is incomplete. Running user-profile again..."
-    "$SCRIPT_DIR/user-profile.sh" install
+    "$USER_PROFILE_SCRIPT"
     source "$CONFIG_FILE"
   fi
 
@@ -143,29 +144,29 @@ show_help() {
 
 # === Entry Point ===
 case "$ACTION" in
-all)
-  load_user_config
-  install_git_package
-  configure_git
-  install_git_completion_zsh
-  config_git_shell
-  ;;
-deps)
-  install_dependencies
-  ;;
-install)
-  install_git_package
-  ;;
-config)
-  load_user_config
-  configure_git
-  install_git_completion_zsh
-  config_git_shell
-  ;;
-clean)
-  clean_git
-  ;;
-*)
-  show_help
-  ;;
+  all)
+    load_user_config
+    install_git_package
+    configure_git
+    install_git_completion_zsh
+    config_git_shell
+    ;;
+  deps)
+    install_dependencies
+    ;;
+  install)
+    install_git_package
+    ;;
+  config)
+    load_user_config
+    configure_git
+    install_git_completion_zsh
+    config_git_shell
+    ;;
+  clean)
+    clean_git
+    ;;
+  *)
+    show_help
+    ;;
 esac
