@@ -5,6 +5,14 @@ trap 'echo "❌ Script failed at $BASH_COMMAND" >&2' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${1:-"$SCRIPT_DIR/modules/debian"}"
 
+# Get user info
+USER_PROFILE_SCRIPT="$SCRIPT_DIR/extra/user-profile.sh"
+if [[ ! -f "$USER_PROFILE_SCRIPT" ]]; then
+  echo "❌ User profile script not found: $USER_PROFILE_SCRIPT"
+  exit 1
+fi
+source "$USER_PROFILE_SCRIPT"
+
 echo "🚀 Running all scripts in: $TARGET_DIR"
 
 # Ensure target is a directory
