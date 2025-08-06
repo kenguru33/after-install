@@ -16,10 +16,23 @@ GIT_CONFIG="$CONFIG_DIR/user-git-info.config"
 AVATAR_CONFIG="$CONFIG_DIR/set-user-avatar.config"
 mkdir -p "$CONFIG_DIR"
 
+# === Ensure git, gum, wget ===
+ensure_deps() {
+  echo "🔧 Checking for required tools..."
+  sudo apt update -y >/dev/null 2>&1
+  sudo apt install -y git wget >/dev/null 2>&1
+
+  if ! command -v gum >/dev/null 2>&1; then
+    echo "deb [trusted=yes] https://apt.charm.sh/ stable main" | \
+      sudo tee /etc/apt/sources.list.d/charm.list >/dev/null
+    sudo apt update -y >/dev/null 2>&1
+    sudo apt install -y gum >/dev/null 2>&1
+  fi
+}
+ensure_deps
+
 # === Splash Screen ===
-clear
-clear
-clear
+clear; clear; clear
 gum style \
   --border double \
   --padding "1 6" \
@@ -31,8 +44,7 @@ gum style \
   "✨ Glans Setup ✨" \
   "" \
   "An opinionated post-installation tool for Debian Trixie" \
-  "" 
-
+  ""
 
 # === Ask for Sudo ===
 echo ""
@@ -90,7 +102,7 @@ gum confirm "🚀 Ready to run all Glans modules?" || {
 # === Run All Installers ===
 echo ""
 gum style --padding "0 2" --border normal --border-foreground 244 \
-  "📦 Running modules in: $TARGET_DIR"
+  "📦 Preparing modules from: $TARGET_DIR"
 
 if [[ ! -d "$TARGET_DIR" ]]; then
   echo "❌ Directory not found: $TARGET_DIR"
@@ -113,8 +125,6 @@ done
 echo ""
 gum style --border rounded --padding "1 4" --margin "1" \
   --foreground 10 --border-foreground 212 --align center \
-  "🎉 Glans setup complete!" ""\
-  "Your Debian Trixie system is now shiny and ready." \
-  "" \
+  "🎉 Glans setup complete!" "" \
+  "Your Debian Trixie system is now shiny and ready." "" \
   "🔁 Please reboot your system to apply all changes."
-
