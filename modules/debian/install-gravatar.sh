@@ -1,25 +1,24 @@
 #!/bin/bash
 set -e
+trap 'echo "❌ Avatar setup failed. Exiting." >&2' ERR
 
 MODULE_NAME="set-user-avatar"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-USER_PROFILE_SCRIPT="$SCRIPT_DIR/extra/user-profile.sh"
+ACTION="${1:-all}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_DIR="$HOME/.config/after-install"
+CONFIG_FILE="$CONFIG_DIR/user-avatar-info.config"
 FACE_IMAGE="$HOME/.face"
-AFTER_INSTALL_CONFIG="$HOME/.config/after-install/userinfo.config"
-MODULE_EMAIL_FILE="$HOME/.config/$MODULE_NAME/email"
 GDM_ICON_DIR="/var/lib/AccountsService/icons"
 DEFAULT_SIZE=256
-
-ACTION="${1:-all}"
-EMAIL="${2:-}"
-SIZE="${3:-$DEFAULT_SIZE}"
+SIZE="${2:-$DEFAULT_SIZE}"
+EMAIL=""
 
 # === Ensure Debian ===
 if [[ -f /etc/os-release ]]; then
   . /etc/os-release
   if [[ "$ID" != "debian" && "$ID_LIKE" != *"debian"* ]]; then
-    echo "❌ This script is for Debian only."
+    echo "❌ This script is for Debian-based systems only."
     exit 1
   fi
 else
@@ -28,76 +27,53 @@ else
 fi
 
 # === Dependencies ===
-DEPS=("curl")
-
 install_dependencies() {
   echo "📦 Installing dependencies..."
   sudo apt update
-  for dep in "${DEPS[@]}"; do
-    if ! dpkg -l | grep -qw "$dep"; then
-      echo "📦 Installing $dep..."
-      sudo apt install -y "$dep"
+  sudo apt install -y curl gum
+}
+
+# === Prompt user for email ===
+prompt_user_email() {
+  gum format --theme=dark <<EOF
+# 🖼️ Set your GNOME/GDM Avatar
+
+This will fetch your Gravatar image using the email address you provide.
+EOF
+
+  while true; do
+    EMAIL=$(gum input --prompt "📧 Email address: " --placeholder "user@example.com" --width 50)
+    if [[ "$EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+      break
     else
-      echo "✅ $dep is already installed."
+      gum style --foreground 1 "❌ Invalid email format. Please try again."
     fi
   done
+
+  mkdir -p "$CONFIG_DIR"
+  echo "email=\"$EMAIL\"" > "$CONFIG_FILE"
+  echo "✅ Saved to $CONFIG_FILE"
 }
 
-# === Load email from user-profile ===
-load_email_from_user_profile() {
-  if [[ ! -f "$AFTER_INSTALL_CONFIG" ]]; then
-    echo "📁 User config not found. Running user-profile to collect info..."
-    "$USER_PROFILE_SCRIPT"
-  fi
-
-  source "$AFTER_INSTALL_CONFIG"
-
-  if [[ -z "$email" ]]; then
-    echo "⚠️  Email missing in config. Running user-profile again..."
-    "$USER_PROFILE_SCRIPT"
-    source "$AFTER_INSTALL_CONFIG"
-  fi
-
-  if [[ -z "$email" ]]; then
-    echo "❌ Still missing email after running user-profile. Exiting."
-    exit 1
-  fi
-
-  EMAIL="$email"
-}
-
-# === Determine email ===
-find_email() {
-  if [[ -n "$EMAIL" ]]; then
-    return
-  fi
-
-  if [[ -f "$AFTER_INSTALL_CONFIG" ]]; then
-    EMAIL=$(grep -i '^email=' "$AFTER_INSTALL_CONFIG" | cut -d= -f2 | xargs)
-    if [[ -n "$EMAIL" ]]; then
-      echo "📄 Loaded email from $AFTER_INSTALL_CONFIG: $EMAIL"
-      return
+# === Load email from config, or prompt ===
+load_email() {
+  if [[ "$ACTION" == "reconfigure" ]]; then
+    prompt_user_email
+  elif [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+    if [[ -z "$email" ]]; then
+      prompt_user_email
+    else
+      EMAIL="$email"
     fi
+  else
+    prompt_user_email
   fi
-
-  if [[ -f "$MODULE_EMAIL_FILE" ]]; then
-    EMAIL=$(<"$MODULE_EMAIL_FILE")
-    echo "📄 Loaded email from $MODULE_EMAIL_FILE: $EMAIL"
-    return
-  fi
-
-  load_email_from_user_profile
 }
 
-install() {
-  echo "📦 No-op install step. Nothing to do here for now."
-}
-
-config() {
-  find_email
-
-  mkdir -p "$(dirname "$MODULE_EMAIL_FILE")"
-  echo "$EMAIL" >"$MODULE_EMAIL_FILE"
+# === Set avatar ===
+config_avatar() {
+  load_email
 
   HASH=$(echo -n "$EMAIL" | tr '[:upper:]' '[:lower:]' | md5sum | cut -d' ' -f1)
   GRAVATAR_URL="https://www.gravatar.com/avatar/$HASH?s=$SIZE&d=identicon"
@@ -106,18 +82,18 @@ config() {
   curl -sL "$GRAVATAR_URL" -o "$FACE_IMAGE"
   echo "🖼️  Saved avatar to $FACE_IMAGE"
 
-  # Set GNOME account picture via gsettings if possible
+  # GNOME user picture
   if command -v gsettings &>/dev/null; then
-    echo "🔧 Setting GNOME account picture via gsettings..."
+    echo "🔧 Setting GNOME account picture..."
     gsettings set org.gnome.desktop.account-service account-picture "$FACE_IMAGE" 2>/dev/null || true
   fi
 
-  # Copy to GDM location
+  # GDM login avatar
   echo "🔧 Setting GDM login avatar..."
   sudo mkdir -p "$GDM_ICON_DIR"
   sudo cp "$FACE_IMAGE" "$GDM_ICON_DIR/$(whoami)"
 
-  # Set in AccountsService
+  # AccountsService config
   ACCOUNTS_USER_CONFIG="/var/lib/AccountsService/users/$(whoami)"
   sudo mkdir -p "$(dirname "$ACCOUNTS_USER_CONFIG")"
   sudo tee "$ACCOUNTS_USER_CONFIG" >/dev/null <<EOF
@@ -128,27 +104,37 @@ EOF
   echo "✅ GNOME and GDM avatar updated."
 }
 
-clean() {
-  echo "🧹 Removing avatar and email config..."
+# === Clean avatar ===
+clean_avatar() {
+  echo "🧹 Removing avatar and config..."
   rm -f "$FACE_IMAGE"
-  rm -f "$MODULE_EMAIL_FILE"
-  echo "✅ Clean complete."
-}
-
-all() {
-  install_dependencies
-  config
+  rm -f "$CONFIG_FILE"
+  echo "✅ Avatar and config cleaned."
 }
 
 # === Entry Point ===
 case "$ACTION" in
-  all) all ;;
-  deps) install_dependencies ;;
-  install) install ;;
-  config) config ;;
-  clean) clean ;;
+  all)
+    install_dependencies
+    config_avatar
+    ;;
+  deps)
+    install_dependencies
+    ;;
+  install)
+    echo "📦 No-op install step."
+    ;;
+  config)
+    config_avatar
+    ;;
+  clean)
+    clean_avatar
+    ;;
+  reconfigure)
+    config_avatar
+    ;;
   *)
-    echo "Usage: $0 {all|deps|install|config|clean} [email] [size]"
+    echo "Usage: $0 {all|deps|install|config|clean|reconfigure} [size]"
     exit 1
     ;;
 esac
