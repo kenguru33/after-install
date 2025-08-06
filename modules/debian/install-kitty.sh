@@ -29,6 +29,7 @@ install_deps() {
   echo "📦 Installing dependencies for Debian..."
   sudo apt update
   sudo apt install -y "${DEPS[@]}"
+
 }
 
 install_kitty() {
@@ -43,12 +44,26 @@ install_kitty() {
 
 check_font_installed() {
   echo "🔍 Checking for required font: $FONT_NAME..."
-  if ! fc-list | grep -qi "$FONT_NAME"; then
-    echo "❌ '$FONT_NAME' not found."
-    echo "👉 Please run: ./install-nerdfont-hack.sh install"
+  if fc-list | grep -i -q "$FONT_NAME"; then
+    echo "✅ Font '$FONT_NAME' is installed."
+    return
+  fi
+
+  echo "❌ '$FONT_NAME' not found. Running Nerd Font installer..."
+  if [[ -x "./install-nerdfont-hack.sh" ]]; then
+    ./install-nerdfont-hack.sh install
+  else
+    echo "❌ Missing script: ./install-nerdfont-hack.sh"
     exit 1
   fi
-  echo "✅ Font '$FONT_NAME' is installed."
+
+  # Re-check after install
+  if fc-list | grep -i -q "$FONT_NAME"; then
+    echo "✅ Font '$FONT_NAME' installed successfully."
+  else
+    echo "❌ Failed to detect '$FONT_NAME' after install."
+    exit 1
+  fi
 }
 
 configure_kitty() {
@@ -56,7 +71,7 @@ configure_kitty() {
 
   mkdir -p "$CONFIG_DIR"
 
-  cat > "$CONFIG_DIR/kitty.conf" <<EOF
+  cat >"$CONFIG_DIR/kitty.conf" <<EOF
 # Font
 font_family          Hack Nerd Font Mono
 font_size            11.0
@@ -169,26 +184,26 @@ clean_kitty() {
 }
 
 case "$ACTION" in
-  deps)
-    install_deps
-    ;;
-  install)
-    install_kitty
-    ;;
-  config)
-    check_font_installed
-    configure_kitty
-    ;;
-  clean)
-    clean_kitty
-    ;;
-  all)
-    install_kitty
-    check_font_installed
-    configure_kitty
-    ;;
-  *)
-    echo "Usage: $0 [deps|install|config|clean|all]"
-    exit 1
-    ;;
+deps)
+  install_deps
+  ;;
+install)
+  install_kitty
+  ;;
+config)
+  check_font_installed
+  configure_kitty
+  ;;
+clean)
+  clean_kitty
+  ;;
+all)
+  install_kitty
+  check_font_installed
+  configure_kitty
+  ;;
+*)
+  echo "Usage: $0 [deps|install|config|clean|all]"
+  exit 1
+  ;;
 esac
