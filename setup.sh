@@ -16,7 +16,13 @@ fi
 # Find and run all executable scripts in the folder
 find "$TARGET_DIR" -maxdepth 1 -type f -name "*.sh" -executable | sort | while read -r script; do
   echo "▶️  Running: $(basename "$script")"
-  "$script" all
+  
+  (
+    # Run each script in a clean subshell and reset stdin from terminal
+    cd "$SCRIPT_DIR"
+    "$script" all </dev/tty
+  )
+
   echo "✅ Finished: $(basename "$script")"
 done
 
