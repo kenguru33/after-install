@@ -7,7 +7,7 @@ ACTION="${1:-all}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config/after-install"
-CONFIG_FILE="$CONFIG_DIR/user-avatar-info.config"
+CONFIG_FILE="$CONFIG_DIR/set-user-avatar.config"
 FACE_IMAGE="$HOME/.face"
 GDM_ICON_DIR="/var/lib/AccountsService/icons"
 DEFAULT_SIZE=256
@@ -51,7 +51,7 @@ EOF
   done
 
   mkdir -p "$CONFIG_DIR"
-  echo "email=\"$EMAIL\"" > "$CONFIG_FILE"
+  echo "gravatar_email=\"$EMAIL\"" > "$CONFIG_FILE"
   echo "✅ Saved to $CONFIG_FILE"
 }
 
@@ -61,10 +61,11 @@ load_email() {
     prompt_user_email
   elif [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
-    if [[ -z "$email" ]]; then
+    if [[ -n "$gravatar_email" ]]; then
+      EMAIL="$gravatar_email"
+    fi
+    if [[ -z "$EMAIL" ]]; then
       prompt_user_email
-    else
-      EMAIL="$email"
     fi
   else
     prompt_user_email
@@ -131,6 +132,7 @@ case "$ACTION" in
     clean_avatar
     ;;
   reconfigure)
+    ACTION="reconfigure"
     config_avatar
     ;;
   *)

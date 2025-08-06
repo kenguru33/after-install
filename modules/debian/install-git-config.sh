@@ -69,8 +69,8 @@ prompt_git_config() {
   editor=$(gum input --prompt "🖊️  Default Git editor: " --placeholder "nvim" --value "nvim")
   branch=$(gum input --prompt "🌿 Default Git branch: " --placeholder "main" --value "main")
 
-  pull_rebase=false
-  gum confirm --prompt "🔁 Use rebase when pulling? (press space to select)" && pull_rebase=true
+  rebase=false
+  gum confirm --prompt "🔁 Use rebase when pulling? (press space to select)" && rebase=true
 
   gum format --theme=dark <<<"# 🧾 Review Git Configuration
 
@@ -78,7 +78,7 @@ prompt_git_config() {
 ✅ Email: **$email**  
 ✅ Editor: **$editor**  
 ✅ Default Branch: **$branch**  
-✅ Pull Rebase: **$pull_rebase**"
+✅ Pull Rebase: **$rebase**"
 
   if gum confirm "💾 Save this configuration?"; then
     {
@@ -86,7 +86,7 @@ prompt_git_config() {
       echo "email=\"$email\""
       echo "editor=\"$editor\""
       echo "branch=\"$branch\""
-      echo "pull_rebase=$pull_rebase"
+      echo "rebase=\"$rebase\""
     } > "$CONFIG_FILE"
     echo "✅ Saved Git config to $CONFIG_FILE"
   else
@@ -102,7 +102,7 @@ load_git_config() {
 
   source "$CONFIG_FILE"
 
-  if [[ -z "$name" || -z "$email" || -z "$editor" || -z "$branch" || -z "$pull_rebase" ]]; then
+  if [[ -z "${name+x}" || -z "${email+x}" || -z "${editor+x}" || -z "${branch+x}" || -z "${rebase+x}" ]]; then
     gum style --foreground 1 "❌ Config incomplete. Re-prompting..."
     prompt_git_config
     source "$CONFIG_FILE"
@@ -117,7 +117,7 @@ configure_git() {
   sudo -u "$REAL_USER" git config --global init.defaultBranch "$branch"
   sudo -u "$REAL_USER" git config --global credential.helper store
   sudo -u "$REAL_USER" git config --global core.editor "$editor"
-  sudo -u "$REAL_USER" git config --global pull.rebase "$pull_rebase"
+  sudo -u "$REAL_USER" git config --global pull.rebase "$rebase"
   sudo -u "$REAL_USER" git config --global color.ui auto
   sudo -u "$REAL_USER" git config --global core.autocrlf input
 
