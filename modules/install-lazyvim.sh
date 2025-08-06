@@ -22,7 +22,7 @@ install_dependencies() {
   case "$OS_ID" in
     debian | ubuntu)
       sudo apt update
-      sudo apt install -y neovim git curl unzip ripgrep fd-find fzf
+      sudo apt install -y neovim git curl unzip ripgrep fd-find fzf build-essential
       ;;
     fedora)
       sudo dnf install -y neovim git curl unzip ripgrep fd-find fzf
