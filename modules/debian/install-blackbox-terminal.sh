@@ -8,7 +8,7 @@ SCHEME_DIR="$HOME/.local/share/blackbox/schemes"
 PALETTE_NAME="Catppuccin Mocha"
 PALETTE_FILE="catppuccin-mocha"
 FONT_NAME="Hack Nerd Font Mono"
-NERDFONT_INSTALLER="$SCRIPT_DIR/install-nerdfont-hack.sh"
+NERDFONT_INSTALLER="$SCRIPT_DIR/install-nerdfonts.sh"
 ACTION="${1:-all}"
 
 # === Detect OS ===

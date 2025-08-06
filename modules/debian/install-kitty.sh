@@ -6,7 +6,7 @@ MODULE_NAME="kitty"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config/kitty"
 FONT_NAME="Hack Nerd Font Mono"
-NERDFONT_INSTALLER="$SCRIPT_DIR/install-nerdfont-hack.sh"
+NERDFONT_INSTALLER="$SCRIPT_DIR/install-nerdfonts.sh"
 ACTION="${1:-all}"
 
 # === Detect OS ===
