@@ -9,25 +9,22 @@ REAL_USER="$(logname 2>/dev/null || echo "$USER")"
 ACTION="all"
 VERBOSE=0
 GUM_VERSION="0.14.3"
-BRANCH="main"  # Default branch
+BRANCH="main" # Default branch
 
 # === Parse arguments ===
 for arg in "$@"; do
   case "$arg" in
-    -v|--verbose)
-      VERBOSE=1
-      ;;
-    all|deps|install)
-      ACTION="$arg"
-      ;;
-    branch=*)
-      BRANCH="${arg#branch=}"
-      ;;
-    *)
-      echo "❌ Unknown argument: $arg"
-      echo "Usage: $SCRIPT_NAME [all|deps|install] [--verbose] [branch=branchname]"
-      exit 1
-      ;;
+  -v | --verbose)
+    VERBOSE=1
+    ;;
+  branch=*)
+    BRANCH="${arg#branch=}"
+    ;;
+  *)
+    echo "❌ Unknown argument: $arg"
+    echo "Usage: $SCRIPT_NAME [--verbose] [branch=branchname]"
+    exit 1
+    ;;
   esac
 done
 
@@ -71,39 +68,6 @@ if ! sudo -v >/dev/null 2>&1; then
   exit 1
 fi
 
-clear
-
-# === DEPS: install essential tools ===
-install_dependencies() {
-  echo "📦 Installing dependencies for $OS_ID..."
-
-  case "$OS_ID" in
-    debian|ubuntu)
-      run sudo apt update
-      run sudo apt install -y curl wget git figlet gnupg2 apt-transport-https
-
-      if ! command -v gum &>/dev/null; then
-        run wget -O /tmp/gum.deb "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_amd64.deb"
-        run sudo apt install -y /tmp/gum.deb
-        rm -f /tmp/gum.deb
-      fi
-      ;;
-    fedora)
-      run sudo dnf install -y curl wget git figlet gnupg2 dnf-plugins-core
-
-      if ! command -v gum &>/dev/null; then
-        run sudo dnf install -y gum
-      fi
-      ;;
-    *)
-      echo "❌ Unsupported OS: $OS_ID"
-      exit 1
-      ;;
-  esac
-
-  echo "✅ Dependencies installed."
-}
-
 # === INSTALL: clone or update repo ===
 install_repo() {
   echo "📥 Cloning or updating after-install repo (branch: $BRANCH)..."
@@ -121,28 +85,13 @@ install_repo() {
 run_installer() {
   cd "$REPO_DIR"
 
-  if [[ ! -f "install.sh" ]]; then
-    echo "❌ install.sh not found in $REPO_DIR"
+  if [[ ! -f "setup.sh" ]]; then
+    echo "❌ setup.sh not found in $REPO_DIR"
     ls -la "$REPO_DIR"
     exit 1
   fi
 
-  echo "🚀 Starting install.sh..."
-  bash install.sh all
+  bash setup.sh
 }
-
-# === Entry Point ===
-case "$ACTION" in
-  deps)
-    install_dependencies
-    ;;
-  install)
-    install_repo
-    run_installer
-    ;;
-  all)
-    install_dependencies
-    install_repo
-    run_installer
-    ;;
-esac
+install_repo
+run_installer
