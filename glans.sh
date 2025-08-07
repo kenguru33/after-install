@@ -4,7 +4,7 @@ trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 # === Config ===
 SCRIPT_NAME="glans"
-EXTRA_SCRIPT="$REPO_DIR/setup-extra.sh"
+EXTRA_SCRIPT="$REPO_DIR/setup-extras.sh"
 SETUP_SCRIPT="$REPO_DIR/setup.sh"
 LOCK_FILE="/tmp/.glans.lock"
 REPO_DIR="$HOME/after-install"
