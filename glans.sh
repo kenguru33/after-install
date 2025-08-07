@@ -4,10 +4,10 @@ trap 'echo "❌ An error occurred. Exiting." >&2' ERR
 
 # === Config ===
 SCRIPT_NAME="glans"
-EXTRA_SCRIPT="$HOME/./setup-extra.sh"
-SETUP_SCRIPT="$HOME/./setup.sh"
+EXTRA_SCRIPT="$REPO_DIR/setup-extra.sh"
+SETUP_SCRIPT="$REPO_DIR/setup.sh"
 LOCK_FILE="/tmp/.glans.lock"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$HOME/after-install"
 VALID_ACTIONS=("update" "module-selection")
 
 # === Functions ===
