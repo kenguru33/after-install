@@ -7,7 +7,7 @@ SCRIPT_NAME="glans"
 EXTRA_SCRIPT="$REPO_DIR/setup-extras.sh"
 SETUP_SCRIPT="$REPO_DIR/setup.sh"
 LOCK_FILE="/tmp/.glans.lock"
-REPO_DIR="$HOME/after-install"
+REPO_DIR="~/after-install"
 VALID_ACTIONS=("update" "module-selection")
 
 # === Functions ===
