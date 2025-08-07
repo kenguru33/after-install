@@ -58,7 +58,7 @@ gum style --foreground 10 "✅ Sudo access granted."
 
 # === Git Config Prompt ===
 echo ""
-gum style --padding "0 2" "🛠 Git configuration (used for commit identity)"
+echo "🛠 Git configuration (used for commit identity)"
 DEFAULT_NAME="${name:-$(git config --global user.name || echo "")}"
 DEFAULT_EMAIL="${email:-$(git config --global user.email || echo "")}"
 DEFAULT_EDITOR="${editor:-nvim}"
@@ -86,7 +86,7 @@ gum style --foreground 10 "✅ Git config saved"
 
 # === Gravatar Config Prompt ===
 echo ""
-gum style --padding "0 2" "📸 Gravatar email (used to download your profile picture)"
+echo "👤 Gravatar email (used to download your profile picture)"
 DEFAULT_GRAVATAR_EMAIL="${gravatar_email:-$email}"
 gravatar_email=$(gum input --value "$DEFAULT_GRAVATAR_EMAIL" --prompt "📧 Gravatar Email: ")
 echo "gravatar_email=\"$gravatar_email\"" > "$AVATAR_CONFIG"
@@ -102,7 +102,7 @@ gum confirm "🚀 Ready to run all Glans modules?" || {
 # === Run All Installers ===
 echo ""
 gum style --padding "0 2" --border normal --border-foreground 244 \
-  "📦 Preparing modules from: $TARGET_DIR"
+  "📦 Processing default modules from: $TARGET_DIR"
 
 if [[ ! -d "$TARGET_DIR" ]]; then
   echo "❌ Directory not found: $TARGET_DIR"
@@ -137,6 +137,9 @@ else
   echo "⚠️  Optional extras script not found or not executable: $EXTRAS_SCRIPT"
 fi
 
+# === Copy glans.sh to ~/.local/bin ===
+cp "$SCRIPT_DIR/glans.sh" ~/.local/bin/glans
+chmod +x ~/.local/bin/glans
 
 # === Done ===
 echo ""
