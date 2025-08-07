@@ -39,26 +39,27 @@ install_chrome() {
 }
 
 config_chrome() {
-  echo "⚙️  Configuring Google Chrome for Wayland, smooth scrolling, and GPU rasterization..."
+  echo "⚙️  Configuring Chrome launch flags..."
 
-  DESKTOP_FILE="/usr/share/applications/google-chrome.desktop"
-  LOCAL_OVERRIDE="$HOME/.local/share/applications/google-chrome-wayland.desktop"
-  mkdir -p "$(dirname "$LOCAL_OVERRIDE")"
-
-  if [[ -f "$DESKTOP_FILE" ]]; then
-    sed \
-      -e 's|^Name=.*|Name=Google Chrome (Wayland)|' \
-      -e 's|^Exec=.*|Exec=/usr/bin/google-chrome-stable --ozone-platform=wayland --enable-features=SmoothScrolling --enable-gpu-rasterization %U|' \
-      "$DESKTOP_FILE" > "$LOCAL_OVERRIDE"
-
-    echo "✅ Created Wayland launcher at: $LOCAL_OVERRIDE"
-  else
-    echo "❌ Cannot find $DESKTOP_FILE — Chrome may not be installed correctly."
-    return
+  # Detect NVIDIA (proprietary driver)
+  USE_VULKAN=true
+  if lspci | grep -i nvidia &>/dev/null; then
+    echo "⚠️  NVIDIA GPU detected — Vulkan will be skipped for safety."
+    USE_VULKAN=false
   fi
 
-  echo "🌐 Setting Google Chrome (Wayland) as the default browser..."
-  xdg-settings set default-web-browser google-chrome-wayland.desktop || true
+  mkdir -p ~/.config
+  {
+    echo "--ozone-platform=wayland"
+    if [[ "$USE_VULKAN" == true ]]; then
+      echo "--enable-features=Vulkan"
+    fi
+  } > ~/.config/chrome-flags.conf
+
+  echo "✅ ~/.config/chrome-flags.conf created with safe flags."
+
+  echo "🌐 Setting Chrome as default browser..."
+  xdg-settings set default-web-browser google-chrome.desktop || true
 
   if command -v update-alternatives &>/dev/null; then
     sudo update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/google-chrome-stable 200
@@ -71,7 +72,7 @@ clean_chrome() {
   sudo apt remove -y google-chrome-stable || true
   sudo apt autoremove -y
   rm -f "$DEB_PATH"
-  rm -f "$HOME/.local/share/applications/google-chrome-wayland.desktop"
+  rm -f ~/.config/chrome-flags.conf
   echo "✅ Chrome uninstalled and cleaned."
 }
 
