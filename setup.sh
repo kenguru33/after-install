@@ -121,6 +121,23 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "*.sh" -executable | sort | while r
   fi
 done
 
+# === Optional Extras ===
+EXTRAS_SCRIPT="$SCRIPT_DIR/setup-extras.sh"
+if [[ -x "$EXTRAS_SCRIPT" ]]; then
+  echo ""
+  gum style --padding "0 2" --border normal --border-foreground 244 \
+    "🎛 Running optional extras module (setup-extras.sh)"
+
+  if $VERBOSE; then
+    bash "$EXTRAS_SCRIPT" --verbose
+  else
+    bash "$EXTRAS_SCRIPT" --quiet
+  fi
+else
+  echo "⚠️  Optional extras script not found or not executable: $EXTRAS_SCRIPT"
+fi
+
+
 # === Done ===
 echo ""
 gum style --border rounded --padding "1 4" --margin "1" \
@@ -128,3 +145,4 @@ gum style --border rounded --padding "1 4" --margin "1" \
   "🎉 Glans setup complete!" "" \
   "Your Debian Trixie system is now shiny and ready." "" \
   "🔁 Please reboot your system to apply all changes."
+
