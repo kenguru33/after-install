@@ -11,14 +11,7 @@ To install After Install, simply run the following command in your terminal:
 ### main branch (default)
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh)"
-```
-
-### dev branch
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh) branch=dev
-
+ wget -qO- https://raw.githubusercontent.com/kenguru33/after-install/main/bootstrap.sh | bash
 ```
 
 ### ❗ Important
