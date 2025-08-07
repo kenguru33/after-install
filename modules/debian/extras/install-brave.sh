@@ -1,10 +1,9 @@
 #!/bin/bash
 set -e
 
-MODULE_NAME="google-chrome"
+MODULE_NAME="brave-browser"
 ACTION="${1:-all}"
 RECONFIGURE=false
-DEB_PATH="/tmp/google-chrome-stable.deb"
 
 # === Detect OS ===
 if [[ -f /etc/os-release ]]; then
@@ -21,31 +20,35 @@ if [[ "$OS_ID" != "debian" && "$OS_ID" != "ubuntu" ]]; then
 fi
 
 # === Dependencies ===
-DEPS=(curl wget gnupg apt-transport-https desktop-file-utils)
+DEPS=(curl gnupg apt-transport-https desktop-file-utils)
 
 install_deps() {
-  echo "📦 Installing dependencies..."
+  echo "📦 Installing system dependencies..."
   sudo apt update
   sudo apt install -y "${DEPS[@]}"
+
+  echo "🔐 Adding Brave APT key and sources file (as per official docs)..."
+  sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
+    https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+
+  sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
+    https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
 }
 
-install_chrome() {
-  echo "⬇️  Downloading Google Chrome .deb..."
-  curl -fsSL -o "$DEB_PATH" https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-
-  echo "📦 Installing Google Chrome..."
-  sudo apt install -y "$DEB_PATH"
-
-  echo "✅ Google Chrome installed."
+install_brave() {
+  echo "📦 Installing Brave Browser..."
+  sudo apt update
+  sudo apt install -y brave-browser
+  echo "✅ Brave installed."
 }
 
-config_chrome() {
-  echo "⚙️  Configuring Chrome for Wayland and NVIDIA..."
+config_brave() {
+  echo "⚙️  Configuring Brave for Wayland and NVIDIA..."
 
-  local WRAPPER="$HOME/.local/bin/google-chrome-wayland"
-  local WAYLAND_DESKTOP="$HOME/.local/share/applications/google-chrome-wayland.desktop"
-  local OVERRIDE_DESKTOP="$HOME/.local/share/applications/google-chrome.desktop"
-  local SYSTEM_DESKTOP="/usr/share/applications/google-chrome.desktop"
+  local WRAPPER="$HOME/.local/bin/brave-wayland"
+  local WAYLAND_DESKTOP="$HOME/.local/share/applications/brave-browser-wayland.desktop"
+  local OVERRIDE_DESKTOP="$HOME/.local/share/applications/brave-browser.desktop"
+  local SYSTEM_DESKTOP="/usr/share/applications/brave-browser.desktop"
 
   mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
 
@@ -56,13 +59,12 @@ config_chrome() {
     echo "⚠️  NVIDIA GPU detected — enabling __GLX_VENDOR_LIBRARY_NAME=nvidia"
   fi
 
-  # Only override if missing or reconfigure
   if [[ "$RECONFIGURE" = true || ! -f "$WRAPPER" ]]; then
-    echo "🛠 Creating Chrome Wayland wrapper: $WRAPPER"
+    echo "🛠 Creating Brave Wayland wrapper: $WRAPPER"
     cat > "$WRAPPER" <<EOF
 #!/bin/bash
 ${HAS_NVIDIA:+export __GLX_VENDOR_LIBRARY_NAME=nvidia}
-exec /usr/bin/google-chrome-stable --ozone-platform=wayland "\$@"
+exec /usr/bin/brave-browser --ozone-platform=wayland "\$@"
 EOF
     chmod +x "$WRAPPER"
   else
@@ -73,9 +75,9 @@ EOF
     echo "🖼 Creating Wayland launcher: $WAYLAND_DESKTOP"
     cat > "$WAYLAND_DESKTOP" <<EOF
 [Desktop Entry]
-Name=Google Chrome (Wayland)
+Name=Brave Browser (Wayland)
 Exec=$WRAPPER %U
-Icon=google-chrome
+Icon=brave-browser
 Type=Application
 Categories=Network;WebBrowser;
 StartupNotify=true
@@ -86,7 +88,7 @@ EOF
 
   if [[ "$RECONFIGURE" = true || ! -f "$OVERRIDE_DESKTOP" ]]; then
     if [[ -f "$SYSTEM_DESKTOP" ]]; then
-      echo "🙈 Hiding system Chrome launcher by overriding: $OVERRIDE_DESKTOP"
+      echo "🙈 Hiding system Brave launcher by overriding: $OVERRIDE_DESKTOP"
       echo "[Desktop Entry]
 Hidden=true" > "$OVERRIDE_DESKTOP"
     fi
@@ -97,19 +99,20 @@ Hidden=true" > "$OVERRIDE_DESKTOP"
   echo "🔃 Updating desktop database..."
   update-desktop-database "$HOME/.local/share/applications"
 
-  echo "✅ Chrome is now configured for Wayland and NVIDIA."
+  echo "✅ Brave is now configured for Wayland and NVIDIA."
 }
 
-clean_chrome() {
-  echo "🧹 Uninstalling Google Chrome..."
-  sudo apt remove -y google-chrome-stable || true
+clean_brave() {
+  echo "🧹 Uninstalling Brave and cleaning up..."
+  sudo apt remove -y brave-browser || true
   sudo apt autoremove -y
-  rm -f "$DEB_PATH"
-  rm -f "$HOME/.local/bin/google-chrome-wayland"
-  rm -f "$HOME/.local/share/applications/google-chrome.desktop"
-  rm -f "$HOME/.local/share/applications/google-chrome-wayland.desktop"
+  sudo rm -f /etc/apt/sources.list.d/brave-browser-release.sources
+  sudo rm -f /usr/share/keyrings/brave-browser-archive-keyring.gpg
+  rm -f "$HOME/.local/bin/brave-wayland"
+  rm -f "$HOME/.local/share/applications/brave-browser.desktop"
+  rm -f "$HOME/.local/share/applications/brave-browser-wayland.desktop"
   update-desktop-database "$HOME/.local/share/applications"
-  echo "✅ Chrome uninstalled and cleaned."
+  echo "✅ Brave fully removed."
 }
 
 # === Main entry point ===
@@ -122,18 +125,18 @@ case "$ACTION" in
     install_deps
     ;;
   install)
-    install_chrome
+    install_brave
     ;;
   config)
-    config_chrome
+    config_brave
     ;;
   clean)
-    clean_chrome
+    clean_brave
     ;;
   all)
     install_deps
-    install_chrome
-    config_chrome
+    install_brave
+    config_brave
     ;;
   *)
     echo "Usage: $0 {deps|install|config|clean|all} [--reconfigure]"

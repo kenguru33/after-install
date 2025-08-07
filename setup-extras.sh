@@ -36,8 +36,30 @@ mkdir -p "$(dirname "$STATE_FILE")"
 
 # === Define modules: [name]=binary
 declare -A MODULES=(
+  [zellij]="zellij"
+  [1password-cli]="op"
   [chrome]="google-chrome"
+  [brave]="brave-browser"
   [jetbrains-toolbox]="jetbrains-toolbox"
+  [lens]="/opt/Lens/lens-desktop"
+  [1password]="1password"
+  [kitty]="kitty"
+  [blackbox-terminal]="blackbox-terminal"
+  [vscode]="code"
+)
+
+# === Optional descriptions
+declare -A MODULE_DESCRIPTIONS=(
+  [zellij]="Zellij terminal multiplexer (like tmux)"
+  [1password-cli]="1Password CLI tool (op)"
+  [chrome]="Google Chrome browser"
+  [brave]="Brave browser with Wayland/NVIDIA config"
+  [jetbrains-toolbox]="JetBrains Toolbox App for IDE management"
+  [lens]="Lens Kubernetes IDE"
+  [1password]="1Password Desktop GUI"
+  [kitty]="Kitty GPU-accelerated terminal"
+  [blackbox-terminal]="BlackBox GNOME terminal"
+  [vscode]="Visual Studio Code"
 )
 
 run_module_script() {
@@ -55,6 +77,7 @@ run_module_script() {
 
   if $VERBOSE; then
     echo "▶️  Running: $label"
+    echo "ℹ️  ${MODULE_DESCRIPTIONS[$name]}"
     bash "$script" "$mode" "${FLAGS[@]}"
     if [[ "$mode" == "clean" ]]; then
       echo "🧹 Cleaned: $module_label"
@@ -74,11 +97,20 @@ run_module_script() {
 main() {
   local all_names=()
   local preselect=()
+  declare -A label_to_name=()
+  local menu_labels=()
 
   for name in "${!MODULES[@]}"; do
     all_names+=("$name")
+    local label="$name"
+    if [[ -n "${MODULE_DESCRIPTIONS[$name]}" ]]; then
+      label="$name – ${MODULE_DESCRIPTIONS[$name]}"
+    fi
+    menu_labels+=("$label")
+    label_to_name["$label"]="$name"
+
     if command -v "${MODULES[$name]}" &>/dev/null; then
-      preselect+=("$name")
+      preselect+=("$label")
     fi
   done
 
@@ -87,9 +119,9 @@ main() {
     SELECTED_ARGS+=(--selected "$item")
   done
 
-  local selected=()
-  IFS=$'\n' read -r -d '' -a selected < <(
-    printf "%s\n" "${all_names[@]}" | gum choose --no-limit "${SELECTED_ARGS[@]}" \
+  local selected_labels=()
+  IFS=$'\n' read -r -d '' -a selected_labels < <(
+    printf "%s\n" "${menu_labels[@]}" | sort | gum choose --no-limit "${SELECTED_ARGS[@]}" \
       --header="Select optional apps to install (unchecked = uninstall)" --height=15 && printf '\0'
   )
 
@@ -97,7 +129,8 @@ main() {
   declare -A SELECTED_NEW=()
   declare -A SELECTED_OLD=()
 
-  for name in "${selected[@]}"; do
+  for label in "${selected_labels[@]}"; do
+    name="${label_to_name[$label]}"
     SELECTED_NEW["$name"]=1
   done
 
@@ -120,7 +153,7 @@ main() {
   done
 
   # Save updated state
-  printf "%s\n" "${selected[@]}" > "$STATE_FILE"
+  printf "%s\n" "${!SELECTED_NEW[@]}" > "$STATE_FILE"
 }
 
 # === Entry point ===

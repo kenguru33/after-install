@@ -12,7 +12,7 @@ ZELLIJ_CONFIG_DIR="$HOME_DIR/.config/zellij"
 ZELLIJ_CONFIG_FILE="$ZELLIJ_CONFIG_DIR/config.kdl"
 ZELLIJ_BIN="$HOME_DIR/.local/bin/zellij"
 ZSH_CONFIG_DIR="$HOME_DIR/.zsh/config"
-LOCAL_CONFIG_TEMPLATE="$(dirname "$0")/config/zellij.zsh"
+LOCAL_CONFIG_TEMPLATE="$(dirname "$0")/../config/zellij.zsh"
 ZSH_TARGET_CONFIG="$ZSH_CONFIG_DIR/zellij.zsh"
 
 # === OS Check ===
