@@ -42,12 +42,13 @@ install_chrome() {
 config_chrome() {
   echo "⚙️  Configuring Chrome for Wayland and NVIDIA..."
 
-  local WRAPPER="$HOME/.local/bin/google-chrome-wayland"
-  local WAYLAND_DESKTOP="$HOME/.local/share/applications/google-chrome-wayland.desktop"
-  local OVERRIDE_DESKTOP="$HOME/.local/share/applications/google-chrome.desktop"
+  local DESKTOP_FILE="$HOME/.local/share/applications/google-chrome-wayland.desktop"
+  local OVERRIDE_FILE="$HOME/.local/share/applications/google-chrome.desktop"
   local SYSTEM_DESKTOP="/usr/share/applications/google-chrome.desktop"
+  local WMCLASS="google-chrome-wayland"
+  local CHROME_BIN="/opt/google/chrome/chrome"
 
-  mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
+  mkdir -p "$HOME/.local/share/applications"
 
   # Detect NVIDIA
   local HAS_NVIDIA=false
@@ -56,39 +57,38 @@ config_chrome() {
     echo "⚠️  NVIDIA GPU detected — enabling __GLX_VENDOR_LIBRARY_NAME=nvidia"
   fi
 
-  # Only override if missing or reconfigure
-  if [[ "$RECONFIGURE" = true || ! -f "$WRAPPER" ]]; then
-    echo "🛠 Creating Chrome Wayland wrapper: $WRAPPER"
-    cat > "$WRAPPER" <<EOF
-#!/bin/bash
-${HAS_NVIDIA:+export __GLX_VENDOR_LIBRARY_NAME=nvidia}
-exec /usr/bin/google-chrome-stable --ozone-platform=wayland "\$@"
-EOF
-    chmod +x "$WRAPPER"
+  # Compose Exec line
+  local EXEC_LINE
+  if [[ "$HAS_NVIDIA" == true ]]; then
+    EXEC_LINE="env __GLX_VENDOR_LIBRARY_NAME=nvidia $CHROME_BIN --ozone-platform=wayland --class=$WMCLASS %U"
   else
-    echo "✅ Wrapper already exists: $WRAPPER"
+    EXEC_LINE="$CHROME_BIN --ozone-platform=wayland --class=$WMCLASS %U"
   fi
 
-  if [[ "$RECONFIGURE" = true || ! -f "$WAYLAND_DESKTOP" ]]; then
-    echo "🖼 Creating Wayland launcher: $WAYLAND_DESKTOP"
-    cat > "$WAYLAND_DESKTOP" <<EOF
+  if [[ "$RECONFIGURE" = true || ! -f "$DESKTOP_FILE" ]]; then
+    echo "🖼 Writing launcher: $DESKTOP_FILE"
+    cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Name=Google Chrome (Wayland)
-Exec=$WRAPPER %U
-Icon=google-chrome
+GenericName=Web Browser
+Comment=Web browser optimized for Wayland
 Type=Application
+Exec=$EXEC_LINE
+Icon=google-chrome
+Terminal=false
+StartupNotify=false
+StartupWMClass=$WMCLASS
 Categories=Network;WebBrowser;
-StartupNotify=true
 EOF
   else
-    echo "✅ Wayland desktop launcher already exists."
+    echo "✅ Launcher already exists."
   fi
 
-  if [[ "$RECONFIGURE" = true || ! -f "$OVERRIDE_DESKTOP" ]]; then
+  if [[ "$RECONFIGURE" = true || ! -f "$OVERRIDE_FILE" ]]; then
     if [[ -f "$SYSTEM_DESKTOP" ]]; then
-      echo "🙈 Hiding system Chrome launcher by overriding: $OVERRIDE_DESKTOP"
+      echo "🙈 Hiding system launcher: $OVERRIDE_FILE"
       echo "[Desktop Entry]
-Hidden=true" > "$OVERRIDE_DESKTOP"
+Hidden=true" > "$OVERRIDE_FILE"
     fi
   else
     echo "✅ Default launcher already hidden."
@@ -97,7 +97,8 @@ Hidden=true" > "$OVERRIDE_DESKTOP"
   echo "🔃 Updating desktop database..."
   update-desktop-database "$HOME/.local/share/applications"
 
-  echo "✅ Chrome is now configured for Wayland and NVIDIA."
+  echo "✅ Chrome is configured for Wayland with no dock icon delay."
+  echo "📌 Launch 'Google Chrome (Wayland)' from search and pin to dock."
 }
 
 clean_chrome() {
@@ -105,10 +106,9 @@ clean_chrome() {
   sudo apt remove -y google-chrome-stable || true
   sudo apt autoremove -y
   rm -f "$DEB_PATH"
-  rm -f "$HOME/.local/bin/google-chrome-wayland"
   rm -f "$HOME/.local/share/applications/google-chrome.desktop"
   rm -f "$HOME/.local/share/applications/google-chrome-wayland.desktop"
-  update-desktop-database "$HOME/.local/share/applications"
+  update-desktop-database "$HOME/.local/share/applications" || true
   echo "✅ Chrome uninstalled and cleaned."
 }
 

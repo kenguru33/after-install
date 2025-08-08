@@ -27,12 +27,12 @@ install_deps() {
   sudo apt update
   sudo apt install -y "${DEPS[@]}"
 
-  echo "🔐 Adding Brave APT key and sources file (as per official docs)..."
+  echo "🔐 Adding Brave APT key and source..."
   sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
     https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
 
-  sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
-    https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+  echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | \
+    sudo tee /etc/apt/sources.list.d/brave-browser-release.list > /dev/null
 }
 
 install_brave() {
@@ -46,6 +46,7 @@ config_brave() {
   echo "⚙️  Configuring Brave for Wayland and NVIDIA..."
 
   local WRAPPER="$HOME/.local/bin/brave-wayland"
+  local BRAVER_LINK="$HOME/.local/bin/braver"
   local WAYLAND_DESKTOP="$HOME/.local/share/applications/brave-browser-wayland.desktop"
   local OVERRIDE_DESKTOP="$HOME/.local/share/applications/brave-browser.desktop"
   local SYSTEM_DESKTOP="/usr/share/applications/brave-browser.desktop"
@@ -59,6 +60,7 @@ config_brave() {
     echo "⚠️  NVIDIA GPU detected — enabling __GLX_VENDOR_LIBRARY_NAME=nvidia"
   fi
 
+  # Create wrapper
   if [[ "$RECONFIGURE" = true || ! -f "$WRAPPER" ]]; then
     echo "🛠 Creating Brave Wayland wrapper: $WRAPPER"
     cat > "$WRAPPER" <<EOF
@@ -71,6 +73,11 @@ EOF
     echo "✅ Wrapper already exists: $WRAPPER"
   fi
 
+  # Create 'braver' symlink
+  ln -sf "$WRAPPER" "$BRAVER_LINK"
+  echo "🔗 'braver' command created at: $BRAVER_LINK"
+
+  # Create Wayland desktop launcher
   if [[ "$RECONFIGURE" = true || ! -f "$WAYLAND_DESKTOP" ]]; then
     echo "🖼 Creating Wayland launcher: $WAYLAND_DESKTOP"
     cat > "$WAYLAND_DESKTOP" <<EOF
@@ -80,15 +87,17 @@ Exec=$WRAPPER %U
 Icon=brave-browser
 Type=Application
 Categories=Network;WebBrowser;
-StartupNotify=true
+StartupNotify=false
+StartupWMClass=Brave-browser
 EOF
   else
     echo "✅ Wayland desktop launcher already exists."
   fi
 
+  # Hide system Brave launcher
   if [[ "$RECONFIGURE" = true || ! -f "$OVERRIDE_DESKTOP" ]]; then
     if [[ -f "$SYSTEM_DESKTOP" ]]; then
-      echo "🙈 Hiding system Brave launcher by overriding: $OVERRIDE_DESKTOP"
+      echo "🙈 Hiding system Brave launcher via override: $OVERRIDE_DESKTOP"
       echo "[Desktop Entry]
 Hidden=true" > "$OVERRIDE_DESKTOP"
     fi
@@ -96,30 +105,47 @@ Hidden=true" > "$OVERRIDE_DESKTOP"
     echo "✅ Default launcher already hidden."
   fi
 
+  # Update GNOME favorites
+  echo "⭐ Updating GNOME favorites..."
+  local current_favs cleaned_favs
+  current_favs=$(gsettings get org.gnome.shell favorite-apps)
+  cleaned_favs=$(echo "$current_favs" | sed "s/'brave-browser.desktop',*//g" | sed "s/,\s*]/]/")
+
+  if [[ "$cleaned_favs" != *"brave-browser-wayland.desktop"* ]]; then
+    cleaned_favs=$(echo "$cleaned_favs" | sed "s/]$/, 'brave-browser-wayland.desktop']/")
+    gsettings set org.gnome.shell favorite-apps "$cleaned_favs"
+    echo "✅ Added Brave Wayland to favorites."
+  else
+    echo "✅ Brave Wayland already in favorites."
+  fi
+
   echo "🔃 Updating desktop database..."
   update-desktop-database "$HOME/.local/share/applications"
 
   echo "✅ Brave is now configured for Wayland and NVIDIA."
+  echo "👉 Launch it with: braver"
 }
 
 clean_brave() {
   echo "🧹 Uninstalling Brave and cleaning up..."
   sudo apt remove -y brave-browser || true
   sudo apt autoremove -y
-  sudo rm -f /etc/apt/sources.list.d/brave-browser-release.sources
+  sudo rm -f /etc/apt/sources.list.d/brave-browser-release.list
   sudo rm -f /usr/share/keyrings/brave-browser-archive-keyring.gpg
   rm -f "$HOME/.local/bin/brave-wayland"
+  rm -f "$HOME/.local/bin/braver"
   rm -f "$HOME/.local/share/applications/brave-browser.desktop"
   rm -f "$HOME/.local/share/applications/brave-browser-wayland.desktop"
   update-desktop-database "$HOME/.local/share/applications"
   echo "✅ Brave fully removed."
 }
 
-# === Main entry point ===
+# === Parse optional flags ===
 if [[ "$2" == "--reconfigure" ]]; then
   RECONFIGURE=true
 fi
 
+# === Main entry point ===
 case "$ACTION" in
   deps)
     install_deps
