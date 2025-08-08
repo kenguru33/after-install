@@ -95,14 +95,32 @@ EOF
   sudo udevadm control --reload-rules
   sudo udevadm trigger
 
-  echo "🔁 Please reboot your system to apply GDM + Wayland + NVIDIA changes."
+  echo "🧯 Disabling NVIDIA persistence mode (better for suspend)..."
+  sudo systemctl disable --now nvidia-persistenced.service 2>/dev/null || true
+  sudo nvidia-smi -pm 0 >/dev/null 2>&1 || true
+
+  echo "💤 Enabling NVIDIA suspend/resume services (no --now to avoid black screen)..."
+  sudo systemctl enable nvidia-suspend.service nvidia-resume.service || true
+
+  echo "🔁 Please reboot to apply all NVIDIA + Wayland changes."
 }
+
 
 # === Step: clean ===
 clean() {
   echo "🧹 Cleaning up NVIDIA APT sources and keyrings..."
-  sudo rm -f "$REPO_LIST" "$ALT_KEY_PATH"
-  sudo apt update
+  sudo rm -f "$REPO_LIST" "$ALT_KEY_PATH" || true
+  sudo apt update || true
+
+  echo "↩️ Reverting NVIDIA suspend + persistence settings..."
+  # Stop using the suspend hooks
+  sudo systemctl disable --now nvidia-suspend.service nvidia-resume.service 2>/dev/null || true
+  # Restore persistence daemon (optional; safe default)
+  sudo systemctl enable --now nvidia-persistenced.service 2>/dev/null || true
+  # Best effort turn persistence back on (won’t error if unsupported)
+  sudo nvidia-smi -pm 1 >/dev/null 2>&1 || true
+
+  echo "🧽 Removed NVIDIA suspend config and restored persistence."
 }
 
 # === Entrypoint ===
