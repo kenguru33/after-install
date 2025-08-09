@@ -71,7 +71,7 @@ apply_appearance_settings() {
   gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_DEST"
   gsettings set org.gnome.desktop.background picture-uri-dark "file://$WALLPAPER_DEST"
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-  #gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+  gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
   gsettings set org.gnome.desktop.wm.preferences button-layout ':close'
 }
 
@@ -82,37 +82,11 @@ reset_appearance_settings() {
 
 # === Keybindings + Workspaces ===
 configure_workspace_keys() {
-  echo "🎯 Setting up GNOME workspace configuration and keybindings..."
-
-  # Static workspaces (disable dynamic)
-  gsettings set org.gnome.mutter dynamic-workspaces false
-  gsettings set org.gnome.desktop.wm.preferences num-workspaces 3
-  echo "🔢 Set static workspaces: 3"
-
-  # Move window up/down
-  #gsettings set org.gnome.desktop.wm.keybindings.move-to-workspace-up "['<Control><Alt>Up']"
-  #gsettings set org.gnome.desktop.wm.keybindings.move-to-workspace-down "['<Control><Alt>Down']"
-
-  echo "✅ GNOME keybindings set:"
-  echo "   - Ctrl+Alt+←/→: switch (default)"
-  echo "   - Ctrl+Alt+↑/↓: move window"
-  echo "   - Ctrl+Alt+1..9: switch to workspace"
-  echo "   - Ctrl+Alt+Shift+1..9: move window to workspace"
+  
 }
 
 reset_workspace_keys() {
-  echo "🧹 Resetting workspace keybindings..."
-
-  gsettings reset org.gnome.desktop.wm.keybindings.move-to-workspace-up
-  gsettings reset org.gnome.desktop.wm.keybindings.move-to-workspace-down
-
-  for i in {1..9}; do
-    gsettings reset "org.gnome.desktop.wm.keybindings.switch-to-workspace-$i"
-    gsettings reset "org.gnome.desktop.wm.keybindings.move-to-workspace-$i"
-  done
-
-  echo "🔄 Re-enabling dynamic workspaces..."
-  gsettings set org.gnome.mutter dynamic-workspaces true
+  
 }
 
 # === Main Config and Clean ===
